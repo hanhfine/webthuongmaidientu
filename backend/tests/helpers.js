@@ -1,5 +1,6 @@
 import { Category } from '../src/models/Category.js';
 import { Product } from '../src/models/Product.js';
+import { Promotion } from '../src/models/Promotion.js';
 import { slugify } from '../src/lib/slugify.js';
 import mongoose from 'mongoose';
 import { createApp } from '../src/app.js';
@@ -44,7 +45,19 @@ export async function loginAs(opts) {
   return { agent, user: u.user };
 }
 
-export const createCategory = (name = `Danh mục ${Math.random().toString(36).slice(2)}`) =>
+export const createPromotion = (overrides = {}) =>
+  Promotion.create({
+    code: 'SALE10',
+    type: 'percent',
+    value: 10,
+    minOrder: 0,
+    maxUses: 100,
+    startsAt: new Date(Date.now() - 86_400_000),
+    endsAt: new Date(Date.now() + 86_400_000),
+    ...overrides,
+  });
+
+export const createCategory =(name = `Danh mục ${Math.random().toString(36).slice(2)}`) =>
   Category.create({ name, slug: slugify(name) });
 
 export async function createProduct(overrides = {}) {

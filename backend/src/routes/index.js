@@ -6,6 +6,7 @@ import imageRoutes from './image.routes.js';
 import orderRoutes from './order.routes.js';
 import productRoutes from './product.routes.js';
 import promotionRoutes from './promotion.routes.js';
+import reviewRoutes from './review.routes.js';
 
 const router = Router();
 
@@ -17,5 +18,6 @@ router.use(productRoutes);
 router.use(cartRoutes);
 router.use(promotionRoutes);
 router.use(orderRoutes);
+router.use(reviewRoutes);
 
 export default router;

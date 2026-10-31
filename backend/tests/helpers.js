@@ -1,3 +1,5 @@
+import { Category } from '../src/models/Category.js';
+import { slugify } from '../src/lib/slugify.js';
 import mongoose from 'mongoose';
 import { createApp } from '../src/app.js';
 import { connectDb, disconnectDb } from '../src/lib/db.js';
@@ -40,3 +42,6 @@ export async function loginAs(opts) {
   assert.equal(res.status, 200);
   return { agent, user: u.user };
 }
+
+export const createCategory = (name = `Danh mục ${Math.random().toString(36).slice(2)}`) =>
+  Category.create({ name, slug: slugify(name) });

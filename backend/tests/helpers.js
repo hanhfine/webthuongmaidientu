@@ -1,4 +1,5 @@
 import { Category } from '../src/models/Category.js';
+import { Product } from '../src/models/Product.js';
 import { slugify } from '../src/lib/slugify.js';
 import mongoose from 'mongoose';
 import { createApp } from '../src/app.js';
@@ -45,3 +46,17 @@ export async function loginAs(opts) {
 
 export const createCategory = (name = `Danh mục ${Math.random().toString(36).slice(2)}`) =>
   Category.create({ name, slug: slugify(name) });
+
+export async function createProduct(overrides = {}) {
+  const categoryId = overrides.categoryId ?? (await createCategory())._id;
+  const name = overrides.name ?? `Sản phẩm ${Math.random().toString(36).slice(2)}`;
+  return Product.create({
+    name,
+    slug: slugify(name),
+    categoryId,
+    brand: 'Apple',
+    price: 10_000_000,
+    stock: 10,
+    ...overrides,
+  });
+}

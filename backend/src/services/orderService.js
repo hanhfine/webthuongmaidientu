@@ -4,6 +4,7 @@ import { Product } from '../models/Product.js';
 import { Order } from '../models/Order.js';
 import { AppError } from '../lib/errors.js';
 import { config } from '../config.js';
+import { toObjectId } from '../lib/ids.js';
 import * as promotionService from './promotionService.js';
 
 export function toResult(order) {
@@ -94,4 +95,91 @@ export async function create(userId, input) {
   } finally {
     await session.endSession();
   }
+}
+
+const TRANSITIONS = {
+  pending: ['confirmed', 'cancelled'],
+  confirmed: ['shipping', 'cancelled'],
+  shipping: ['delivered'],
+  delivered: [],
+  cancelled: [],
+};
+
+async function page(filter, { page: pageNo = 1, pageSize = 10 } = {}) {
+  const [items, total] = await Promise.all([
+    Order.find(filter).sort('-createdAt').skip((pageNo - 1) * pageSize).limit(pageSize).lean(),
+    Order.countDocuments(filter),
+  ]);
+  return { items, total, page: pageNo, pageSize };
+}
+
+export const listMine = (userId, opts) => page({ userId }, opts);
+export const listAll = ({ status, ...opts } = {}) => page(status ? { status } : {}, opts);
+
+export async function getMine(userId, id) {
+  const order = await Order.findOne({ _id: toObjectId(id), userId }).lean();
+  if (!order) throw new AppError(404, 'NOT_FOUND', 'Không tìm thấy đơn hàng');
+  return order;
+}
+
+export async function cancel(id, { userId } = {}) {
+  const filter = { _id: toObjectId(id) };
+  if (userId) filter.userId = userId;
+  if (!(await Order.exists(filter))) throw new AppError(404, 'NOT_FOUND', 'Không tìm thấy đơn hàng');
+
+  const session = await mongoose.startSession();
+  try {
+    let cancelled;
+    await session.withTransaction(async () => {
+      // Conditional on the previous status: only one concurrent cancel wins, so refunds happen once.
+      cancelled = await Order.findOneAndUpdate(
+        { ...filter, status: { $in: ['pending', 'confirmed'] }, paymentStatus: { $ne: 'paid' } },
+        { status: 'cancelled' },
+        { returnDocument: 'after', session },
+      );
+      if (!cancelled) {
+        throw new AppError(409, 'CANNOT_CANCEL', 'Không thể hủy đơn hàng ở trạng thái này');
+      }
+      for (const item of cancelled.items) {
+        await Product.updateOne({ _id: item.productId }, { $inc: { stock: item.quantity } }, { session });
+      }
+      if (cancelled.promotionCode) await promotionService.release(cancelled.promotionCode, session);
+    });
+    return cancelled;
+  } finally {
+    await session.endSession();
+  }
+}
+
+export async function updateStatus(id, next) {
+  const order = await Order.findById(toObjectId(id));
+  if (!order) throw new AppError(404, 'NOT_FOUND', 'Không tìm thấy đơn hàng');
+  if (!TRANSITIONS[order.status].includes(next)) {
+    throw new AppError(409, 'INVALID_TRANSITION', `Không thể chuyển từ ${order.status} sang ${next}`);
+  }
+  if (next === 'cancelled') return cancel(id);
+  if (next === 'confirmed' && order.paymentMethod === 'bank' && order.paymentStatus !== 'paid') {
+    throw new AppError(409, 'PAYMENT_REQUIRED', 'Đơn chuyển khoản cần xác nhận đã thanh toán trước');
+  }
+  const patch = { status: next };
+  if (next === 'delivered') patch.deliveredAt = new Date();
+  const updated = await Order.findOneAndUpdate(
+    { _id: order._id, status: order.status },
+    patch,
+    { returnDocument: 'after' },
+  );
+  if (!updated) throw new AppError(409, 'CONFLICT', 'Đơn hàng vừa được cập nhật, vui lòng tải lại');
+  return updated;
+}
+
+export async function confirmPayment(id) {
+  const updated = await Order.findOneAndUpdate(
+    { _id: toObjectId(id), paymentStatus: { $in: ['unpaid', 'pending'] }, status: { $ne: 'cancelled' } },
+    { paymentStatus: 'paid' },
+    { returnDocument: 'after' },
+  );
+  if (!updated) {
+    throw new AppError(409, 'CANNOT_CONFIRM_PAYMENT', 'Không thể xác nhận thanh toán cho đơn này');
+  }
+  return updated;
 }

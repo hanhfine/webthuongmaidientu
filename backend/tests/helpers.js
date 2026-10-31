@@ -25,6 +25,7 @@ import assert from 'node:assert/strict';
 import request from 'supertest';
 import bcrypt from 'bcryptjs';
 import { User } from '../src/models/User.js';
+import * as orderService from '../src/services/orderService.js';
 
 export async function createUser({
   role = 'customer',
@@ -89,3 +90,9 @@ export const orderBody = (overrides = {}) => ({
   shippingAddress: { fullName: 'Nguyễn An', phone: '0900000000', address: '1 Phố Huế, Hà Nội' },
   ...overrides,
 });
+
+export async function placeOrder(user, lines, overrides = {}) {
+  await addToCart(user._id, lines);
+  const { order } = await orderService.create(user._id, orderBody(overrides));
+  return order;
+}

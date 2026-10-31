@@ -8,11 +8,12 @@ Website B2C cho một cửa hàng đồ công nghệ (điện thoại, laptop, p
 
 | Hạng mục | Quyết định |
 |---|---|
-| Framework | Next.js (App Router), JavaScript thuần (ESM) |
-| Giao diện | Tailwind CSS, responsive |
+| Tổ chức repo | Một repo (monorepo), hai ứng dụng tách riêng: `backend/` và `frontend/`, giao tiếp qua REST |
+| Backend | Node.js + Express, JavaScript thuần (ESM), cổng 4000 |
+| Frontend | Next.js (App Router), JavaScript thuần, Tailwind CSS, responsive, cổng 3000; chỉ gọi API, không truy cập DB |
 | Cơ sở dữ liệu | MongoDB + Mongoose, chạy bằng Docker (replica set 1 node) để dùng transaction |
 | Xác thực | Tự viết: `bcrypt` + JWT (`jose`) trong cookie httpOnly |
-| API | REST đầy đủ bằng Route Handlers (`/api/...`), giao diện gọi `fetch` |
+| API | REST đầy đủ do Express phục vụ dưới `/api/...`; frontend gọi `fetch` |
 | Ảnh sản phẩm | Upload, lưu trong MongoDB (collection `images`), tối đa 2 MB, JPEG/PNG/WebP |
 | Phạm vi | Cốt lõi + mở rộng vừa (xem mục 6) |
 
@@ -20,30 +21,42 @@ Ngoài phạm vi: thanh toán thật, API vận chuyển, trả góp, chat, đa 
 
 ## 2. Kiến trúc
 
-Trang React → `fetch` → Route Handler `/api/...` → Service → Model (Mongoose) → MongoDB.
+Trình duyệt → Next.js (frontend) → `fetch /api/...` → Express route → Service → Model (Mongoose) → MongoDB.
+
+Next.js chuyển tiếp `/api/*` sang backend bằng `rewrites` trong `next.config.js`, nên trình duyệt chỉ thấy một origin. Nhờ đó cookie httpOnly hoạt động mà không cần cấu hình CORS phức tạp.
 
 ```
 webbanhang/
 ├─ docker-compose.yml        # MongoDB replica set 1 node
-├─ src/
-│  ├─ app/
-│  │  ├─ (shop)/             # trang khách
-│  │  ├─ admin/              # trang quản trị
-│  │  ├─ login, register
-│  │  └─ api/                # REST handlers
-│  ├─ models/                # Mongoose schema
-│  ├─ services/              # nghiệp vụ
-│  ├─ lib/                   # db.js, auth.js, errors.js
-│  ├─ components/
-│  └─ middleware.js          # chặn /admin và API quản trị theo vai trò
-├─ scripts/seed.js           # admin, danh mục, sản phẩm mẫu
-└─ tests/
+├─ backend/
+│  ├─ package.json
+│  ├─ src/
+│  │  ├─ server.js, app.js
+│  │  ├─ routes/             # khai báo endpoint, kiểm tra input (zod)
+│  │  ├─ middleware/         # auth (JWT), requireRole, errorHandler
+│  │  ├─ services/           # nghiệp vụ
+│  │  ├─ models/             # Mongoose schema
+│  │  └─ lib/                # db.js, errors.js
+│  ├─ scripts/seed.js        # admin, danh mục, sản phẩm mẫu
+│  └─ tests/
+├─ frontend/
+│  ├─ package.json, next.config.js
+│  └─ src/
+│     ├─ app/
+│     │  ├─ (shop)/          # trang khách
+│     │  ├─ admin/           # trang quản trị
+│     │  └─ login, register
+│     ├─ components/
+│     ├─ lib/api.js          # hàm fetch dùng chung
+│     └─ middleware.js       # chuyển hướng người chưa đăng nhập / không phải admin
+└─ docs/
 ```
 
 Nguyên tắc:
-- Route Handler chỉ kiểm tra dữ liệu vào, kiểm tra quyền, gọi service, trả JSON.
+- Route chỉ kiểm tra dữ liệu vào, kiểm tra quyền, gọi service, trả JSON.
 - Mọi nghiệp vụ nằm trong `services/`. Đặt hàng và trừ kho chạy trong một transaction.
 - Giá và tồn kho do server đọc lại khi đặt hàng; giá trong giỏ chỉ để hiển thị.
+- Quyền được thực thi ở backend. `middleware.js` của frontend chỉ chuyển hướng cho UX, không phải lớp bảo mật.
 
 ## 3. Mô hình dữ liệu
 
@@ -75,7 +88,7 @@ Lỗi trả `{code, message}` (kèm `fieldErrors` khi sai dữ liệu form).
 | Sản phẩm | GET /api/products?q=&category=&brand=&minPrice=&maxPrice=&sort=&page=; GET /api/products/:id | công khai |
 | | POST/PUT/DELETE /api/products (xóa = ẩn) | admin |
 | Danh mục | GET /api/categories; POST/PUT/DELETE | đọc công khai, ghi admin |
-| Ảnh | GET /api/images/:id (cache); POST /api/images | đọc công khai, upload admin |
+| Ảnh | GET /api/images/:id (cache); POST /api/images (multipart, `multer` lưu vào bộ nhớ) | đọc công khai, upload admin |
 | Giỏ hàng | GET /api/cart; POST /api/cart/items; PATCH/DELETE /api/cart/items/:productId | customer |
 | Đơn hàng | POST /api/orders; GET /api/orders; GET /api/orders/:id | customer (chỉ đơn của mình) |
 | | GET /api/admin/orders; PATCH /api/admin/orders/:id/status, /payment | admin |
@@ -97,7 +110,7 @@ Lỗi trả `{code, message}` (kèm `fieldErrors` khi sai dữ liệu form).
 Chỉ khi `pending`/`confirmed` và chưa `paid`. Hoàn kho và hoàn lượt mã đúng một lần, bằng cập nhật có điều kiện theo trạng thái cũ.
 
 ### Phân quyền
-`middleware.js` kiểm tra JWT cookie và vai trò cho `/admin/*` và `/api/admin/*`. Service vẫn kiểm tra `userId` của đơn.
+Backend: middleware `auth` đọc JWT từ cookie, `requireRole('admin')` bảo vệ `/api/admin/*` và các route ghi; service kiểm tra `userId` của đơn. Frontend: `middleware.js` chỉ chuyển hướng trang `/admin/*` và trang cần đăng nhập.
 
 ## 5. Giao diện, lỗi, kiểm thử
 
@@ -106,7 +119,7 @@ Giao diện:
 - Admin: thống kê doanh thu; quản lý sản phẩm (upload ảnh), danh mục, đơn (đổi trạng thái, xác nhận đã thu tiền), người dùng, mã giảm giá.
 - Trạng thái đăng nhập lấy từ `GET /api/auth/me`, giữ bằng một React context nhỏ.
 
-Lỗi: lớp `AppError(code, status, message)` và hàm bọc chung cho Route Handler; dữ liệu vào kiểm tra bằng `zod`; lỗi không lường trước trả 500 chung, chi tiết chỉ ghi log. Mật khẩu băm bcrypt, cookie httpOnly + sameSite, không trả passwordHash, kiểm tra loại và dung lượng ảnh.
+Lỗi: lớp `AppError(code, status, message)` và middleware `errorHandler` chung của Express; dữ liệu vào kiểm tra bằng `zod`; lỗi không lường trước trả 500 chung, chi tiết chỉ ghi log. Mật khẩu băm bcrypt, cookie httpOnly + sameSite, không trả passwordHash, kiểm tra loại và dung lượng ảnh.
 
 Kiểm thử (chạy với MongoDB replica set thật, không mock DB):
 - Hai người cùng mua món còn 1: chỉ một đơn thành công.

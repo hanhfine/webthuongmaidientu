@@ -14,6 +14,8 @@ npm run seed                       # dữ liệu mẫu, chạy lại an toàn
 npm run dev                        # API tại http://localhost:4000
 ```
 
+Lưu ý: `npm run dev`/`npm run seed` đặt `NODE_ENV=development`. `npm start` (không đặt NODE_ENV) bắt buộc phải có `JWT_SECRET`, nếu không server từ chối khởi động; `SHIPPING_FEE` phải là số nguyên không âm.
+
 Chạy test (cần MongoDB đang chạy, dùng DB `webbanhang_test`): `npm test`.
 
 ## Tài khoản dev

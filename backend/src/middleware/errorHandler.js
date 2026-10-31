@@ -1,3 +1,4 @@
+import multer from 'multer';
 import { ZodError } from 'zod';
 import { AppError } from '../lib/errors.js';
 
@@ -17,8 +18,15 @@ export function errorHandler(err, req, res, next) {
   if (err.type === 'entity.parse.failed') {
     return res.status(400).json({ code: 'BAD_JSON', message: 'JSON không hợp lệ' });
   }
-  if (err.code === 'LIMIT_FILE_SIZE') {
-    return res.status(413).json({ code: 'FILE_TOO_LARGE', message: 'Ảnh tối đa 2 MB' });
+  if (err instanceof multer.MulterError) {
+    if (err.code === 'LIMIT_FILE_SIZE') {
+      return res.status(413).json({ code: 'FILE_TOO_LARGE', message: 'Ảnh tối đa 2 MB' });
+    }
+    return res.status(400).json({ code: err.code, message: 'Tệp tải lên không hợp lệ' });
+  }
+  const status = err.status ?? err.statusCode;
+  if (Number.isInteger(status) && status >= 400 && status < 500 && err.expose) {
+    return res.status(status).json({ code: err.type ?? 'BAD_REQUEST', message: err.message });
   }
   console.error(err);
   res.status(500).json({ code: 'INTERNAL', message: 'Lỗi máy chủ' });

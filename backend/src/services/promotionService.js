@@ -1,6 +1,7 @@
 import { Promotion } from '../models/Promotion.js';
 import { AppError, conflictIfDuplicate } from '../lib/errors.js';
 import { toObjectId } from '../lib/ids.js';
+import { promotionSchema } from '../validators/promotion.js';
 
 const invalid = () => new AppError(400, 'PROMO_INVALID', 'Mã giảm giá không hợp lệ hoặc đã hết hạn/lượt dùng');
 
@@ -52,7 +53,14 @@ export async function create(data) {
 }
 
 export async function update(id, data) {
-  const promo = await Promotion.findByIdAndUpdate(toObjectId(id), data, { returnDocument: 'after' });
+  const _id = toObjectId(id);
+  const existing = await Promotion.findById(_id).lean();
+  if (!existing) throw new AppError(404, 'NOT_FOUND', 'Không tìm thấy mã giảm giá');
+  const merged = promotionSchema.safeParse({ ...existing, ...data });
+  if (!merged.success) {
+    throw new AppError(400, 'VALIDATION', 'Dữ liệu không hợp lệ', merged.error.flatten().fieldErrors);
+  }
+  const promo = await Promotion.findByIdAndUpdate(_id, data, { returnDocument: 'after' });
   if (!promo) throw new AppError(404, 'NOT_FOUND', 'Không tìm thấy mã giảm giá');
   return promo;
 }

@@ -102,3 +102,11 @@ test('from after to is rejected with 400', async () => {
   const res = await admin.agent.get('/api/admin/stats/revenue?from=2026-10-31&to=2026-10-01');
   assert.equal(res.status, 400);
 });
+
+test('self-lock check is not bypassed by an uppercase-hex id', async () => {
+  const admin = await loginAs({ role: 'admin' });
+  const res = await admin.agent.patch(`/api/admin/users/${String(admin.user._id).toUpperCase()}/status`).send({ isActive: false });
+  assert.equal(res.status, 400);
+  assert.equal(res.body.code, 'CANNOT_LOCK_SELF');
+  assert.equal(res.body.message, 'Không thể thay đổi trạng thái của chính bạn');
+});

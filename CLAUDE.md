@@ -20,7 +20,7 @@ From `backend/`:
     NODE_ENV=test node --env-file-if-exists=.env --test tests/order-create.test.js    # one file
     NODE_ENV=test node --env-file-if-exists=.env --test --test-name-pattern="racing" tests/order-create.test.js  # one test by name
 
-`NODE_ENV=test` is what switches the DB to `webbanhang_test` (see `src/config.js`); never run the seed with it. Config comes from env vars with dev defaults (`backend/.env.example`); there is no dotenv package, scripts use `node --env-file-if-exists`. The seed admin password is `ADMIN_PASSWORD` (default `admin12345`, dev only).
+`npm run dev`/`npm run seed` set `NODE_ENV=development`; `npm start` leaves it unset, which is treated as production-like: startup throws unless `JWT_SECRET` is set (the default dev secret is only allowed for `development`/`test`). `SHIPPING_FEE` must be a non-negative integer or startup fails. `NODE_ENV=test` is what switches the DB to `webbanhang_test` (see `src/config.js`); never run the seed with it. Config comes from env vars with dev defaults (`backend/.env.example`); there is no dotenv package, scripts use `node --env-file-if-exists`. The seed admin password is `ADMIN_PASSWORD` (default `admin12345`, dev only).
 
 ## Architecture
 

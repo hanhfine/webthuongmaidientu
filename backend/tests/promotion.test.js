@@ -64,3 +64,15 @@ test('admin manages promotions; customers are forbidden', async () => {
   const customer = await loginAs();
   assert.equal((await customer.agent.get('/api/admin/promotions')).status, 403);
 });
+
+test('PUT enforces percent <= 100 and endsAt > startsAt on the merged document', async () => {
+  const admin = await loginAs({ role: 'admin' });
+  const promo = await createPromotion({ code: 'MERGE' });
+  const url = `/api/admin/promotions/${promo._id}`;
+  const big = await admin.agent.put(url).send({ value: 500 });
+  assert.equal(big.status, 400);
+  const early = await admin.agent.put(url).send({ endsAt: new Date(promo.startsAt.getTime() - 1000).toISOString() });
+  assert.equal(early.status, 400);
+  const ok = await admin.agent.put(url).send({ value: 50 });
+  assert.equal(ok.status, 200);
+});

@@ -126,7 +126,7 @@ Giao diện:
 - Admin: thống kê doanh thu; quản lý sản phẩm (upload ảnh), danh mục, đơn (đổi trạng thái, xác nhận đã thu tiền), người dùng, mã giảm giá.
 - Trạng thái đăng nhập lấy từ `GET /api/auth/me`, giữ bằng một React context nhỏ.
 
-Lỗi: lớp `AppError(code, status, message)` và middleware `errorHandler` chung của Express; dữ liệu vào kiểm tra bằng `zod`; lỗi không lường trước trả 500 chung, chi tiết chỉ ghi log. Mật khẩu băm bcrypt, cookie httpOnly + sameSite, không trả passwordHash, kiểm tra loại và dung lượng ảnh.
+Lỗi: lớp `AppError(status, code, message)` và middleware `errorHandler` chung của Express; dữ liệu vào kiểm tra bằng `zod`; lỗi không lường trước trả 500 chung, chi tiết chỉ ghi log. Mật khẩu băm bcrypt, cookie httpOnly + sameSite, không trả passwordHash, kiểm tra loại và dung lượng ảnh.
 
 Kiểm thử (chạy với MongoDB replica set thật, không mock DB):
 - Hai người cùng mua món còn 1: chỉ một đơn thành công.

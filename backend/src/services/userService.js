@@ -19,10 +19,11 @@ export async function list({ q, page, pageSize }) {
 }
 
 export async function setStatus(actingAdminId, id, isActive) {
-  if (String(actingAdminId) === id) {
-    throw new AppError(400, 'CANNOT_LOCK_SELF', 'Không thể khóa chính tài khoản của bạn');
+  const targetId = toObjectId(id);
+  if (String(actingAdminId) === String(targetId)) {
+    throw new AppError(400, 'CANNOT_LOCK_SELF', 'Không thể thay đổi trạng thái của chính bạn');
   }
-  const user = await User.findByIdAndUpdate(toObjectId(id), { isActive }, { returnDocument: 'after' });
+  const user = await User.findByIdAndUpdate(targetId, { isActive }, { returnDocument: 'after' });
   if (!user) throw new AppError(404, 'NOT_FOUND', 'Không tìm thấy người dùng');
   return toDTO(user);
 }

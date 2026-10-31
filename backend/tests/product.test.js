@@ -82,3 +82,32 @@ test('customers cannot write products; brands endpoint lists distinct brands', a
   const res = await request(app).get('/api/brands');
   assert.deepEqual(res.body, ['Apple', 'Dell']);
 });
+
+const productBody = (categoryId, extra = {}) => ({ name: 'P', categoryId: String(categoryId), brand: 'Apple', price: 1000, stock: 1, ...extra });
+
+test('product create/update reject malformed ids with 400 fieldErrors', async () => {
+  const { agent } = await loginAs({ role: 'admin' });
+  const cat = await createCategory();
+  const bad = await agent.post('/api/products').send(productBody(cat._id, { imageId: 'bad' }));
+  assert.equal(bad.status, 400);
+  assert.ok(bad.body.fieldErrors.imageId);
+  const badCat = await agent.post('/api/products').send(productBody('nope'));
+  assert.equal(badCat.status, 400);
+  assert.ok(badCat.body.fieldErrors.categoryId);
+  const p = await createProduct();
+  const put = await agent.put(`/api/products/${p._id}`).send({ imageId: 'bad' });
+  assert.equal(put.status, 400);
+});
+
+test('product create/update reject a well-formed but nonexistent imageId', async () => {
+  const { agent } = await loginAs({ role: 'admin' });
+  const cat = await createCategory();
+  const ghost = '0123456789abcdef01234567';
+  const res = await agent.post('/api/products').send(productBody(cat._id, { imageId: ghost }));
+  assert.equal(res.status, 400);
+  assert.equal(res.body.code, 'IMAGE_NOT_FOUND');
+  const p = await createProduct();
+  const put = await agent.put(`/api/products/${p._id}`).send({ imageId: ghost });
+  assert.equal(put.status, 400);
+  assert.equal(put.body.code, 'IMAGE_NOT_FOUND');
+});

@@ -40,3 +40,16 @@ test('customer cannot upload; unknown id is 404', async () => {
   assert.equal(res.status, 403);
   assert.equal((await request(app).get('/api/images/aaaaaaaaaaaaaaaaaaaaaaaa')).status, 404);
 });
+
+test('wrong upload field name is a 400, not a 500', async () => {
+  const { agent } = await loginAs({ role: 'admin' });
+  const res = await agent.post('/api/images').attach('wrong', png, { filename: 'a.png', contentType: 'image/png' });
+  assert.equal(res.status, 400);
+  assert.ok(res.body.code);
+});
+
+test('JSON body over the limit is a 413 with code/message', async () => {
+  const res = await request(app).post('/api/auth/login').send({ email: 'x'.repeat(200_000) });
+  assert.equal(res.status, 413);
+  assert.ok(res.body.code && res.body.message);
+});

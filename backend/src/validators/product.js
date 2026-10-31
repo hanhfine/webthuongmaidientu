@@ -1,14 +1,16 @@
 import { z } from 'zod';
 
+const objectId = z.string().regex(/^[0-9a-f]{24}$/i, 'ID không hợp lệ');
+
 export const productSchema = z.object({
   name: z.string().trim().min(1, 'Tên sản phẩm bắt buộc'),
-  categoryId: z.string().min(1),
+  categoryId: objectId,
   brand: z.string().trim().min(1, 'Hãng bắt buộc'),
   price: z.number().int().min(0),
   stock: z.number().int().min(0),
   description: z.string().default(''),
   specs: z.record(z.string()).default({}),
-  imageId: z.string().nullable().optional(),
+  imageId: objectId.nullable().optional(),
   isActive: z.boolean().optional(),
 });
 

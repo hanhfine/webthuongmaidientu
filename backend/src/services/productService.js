@@ -1,6 +1,7 @@
 import crypto from 'node:crypto';
 import { Product } from '../models/Product.js';
 import { Category } from '../models/Category.js';
+import { Image } from '../models/Image.js';
 import { AppError } from '../lib/errors.js';
 import { slugify } from '../lib/slugify.js';
 import { toObjectId } from '../lib/ids.js';
@@ -56,14 +57,22 @@ async function assertCategory(categoryId) {
   }
 }
 
+async function assertImage(imageId) {
+  if (imageId && !(await Image.exists({ _id: imageId }))) {
+    throw new AppError(400, 'IMAGE_NOT_FOUND', 'Ảnh không tồn tại');
+  }
+}
+
 export async function create(data) {
   await assertCategory(data.categoryId);
+  await assertImage(data.imageId);
   const slug = `${slugify(data.name)}-${crypto.randomBytes(3).toString('hex')}`;
   return Product.create({ ...data, slug });
 }
 
 export async function update(id, data) {
   if (data.categoryId) await assertCategory(data.categoryId);
+  await assertImage(data.imageId);
   const patch = { ...data };
   if (data.name) patch.slug = `${slugify(data.name)}-${crypto.randomBytes(3).toString('hex')}`;
   const product = await Product.findByIdAndUpdate(toObjectId(id), patch, { returnDocument: 'after' });

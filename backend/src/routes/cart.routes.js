@@ -1,9 +1,9 @@
 import { Router } from 'express';
 import * as c from '../controllers/cartController.js';
-import { authenticate } from '../middleware/auth.js';
+import { authenticate, requireRole } from '../middleware/auth.js';
 
 const router = Router();
-router.use('/cart', authenticate);
+router.use('/cart', authenticate, requireRole('customer'));
 router.get('/cart', c.show);
 router.post('/cart/items', c.add);
 router.patch('/cart/items/:productId', c.setQuantity);

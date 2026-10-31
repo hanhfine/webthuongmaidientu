@@ -57,6 +57,26 @@ test('carts are per-user', async () => {
   assert.equal((await b.agent.get('/api/cart')).body.items.length, 0);
 });
 
+test('admins cannot use the cart (customer-only)', async () => {
+  const { agent } = await loginAs({ role: 'admin' });
+  const res = await agent.get('/api/cart');
+  assert.equal(res.status, 403);
+});
+
+test('uppercase-hex productId resolves to the same cart line', async () => {
+  const { agent } = await loginAs();
+  const p = await createProduct({ stock: 10 });
+  const upper = String(p._id).toUpperCase();
+  await agent.post('/api/cart/items').send({ productId: String(p._id), quantity: 1 });
+  const res = await agent.post('/api/cart/items').send({ productId: upper, quantity: 1 });
+  assert.equal(res.status, 200);
+  assert.equal(res.body.items.length, 1);
+  assert.equal(res.body.items[0].quantity, 2);
+  const patched = await agent.patch(`/api/cart/items/${upper}`).send({ quantity: 5 });
+  assert.equal(patched.status, 200);
+  assert.equal(patched.body.items[0].quantity, 5);
+});
+
 test('quantity must be a positive integer', async () => {
   const { agent } = await loginAs();
   const p = await createProduct();

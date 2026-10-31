@@ -46,7 +46,7 @@ function assertStock(product, quantity) {
 export async function addItem(userId, productId, quantity) {
   const product = await loadActiveProduct(productId);
   const cart = await getOrCreate(userId);
-  const line = cart.items.find((i) => String(i.productId) === productId);
+  const line = cart.items.find((i) => String(i.productId) === String(product._id));
   const next = (line?.quantity ?? 0) + quantity;
   assertStock(product, next);
   if (line) line.quantity = next;
@@ -59,7 +59,7 @@ export async function setQuantity(userId, productId, quantity) {
   const product = await loadActiveProduct(productId);
   assertStock(product, quantity);
   const cart = await getOrCreate(userId);
-  const line = cart.items.find((i) => String(i.productId) === productId);
+  const line = cart.items.find((i) => String(i.productId) === String(product._id));
   if (!line) throw new AppError(404, 'NOT_FOUND', 'Sản phẩm không có trong giỏ');
   line.quantity = quantity;
   await cart.save();

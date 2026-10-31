@@ -1,3 +1,4 @@
+import { Cart } from '../src/models/Cart.js';
 import { Category } from '../src/models/Category.js';
 import { Product } from '../src/models/Product.js';
 import { Promotion } from '../src/models/Promotion.js';
@@ -73,3 +74,18 @@ export async function createProduct(overrides = {}) {
     ...overrides,
   });
 }
+
+export async function addToCart(userId, lines) {
+  await Cart.deleteOne({ userId });
+  await Cart.create({
+    userId,
+    items: lines.map(([p, q]) => ({ productId: p._id, quantity: q })),
+  });
+}
+
+export const orderBody = (overrides = {}) => ({
+  requestKey: `key-${Math.random().toString(36).slice(2)}`,
+  paymentMethod: 'cod',
+  shippingAddress: { fullName: 'Nguyễn An', phone: '0900000000', address: '1 Phố Huế, Hà Nội' },
+  ...overrides,
+});

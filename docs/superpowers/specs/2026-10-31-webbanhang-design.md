@@ -69,7 +69,7 @@ Nguyên tắc:
 |---|---|---|
 | users | email (unique, lowercase), passwordHash, fullName, phone, role (customer/admin), isActive | Đăng ký công khai chỉ tạo customer; admin tạo bằng seed; tài khoản khóa không đăng nhập được |
 | categories | name, slug (unique), isActive | Đã có sản phẩm thì ẩn, không xóa |
-| products | name, slug, categoryId, brand, price, stock, description, specs (object tự do), imageId, ratingAvg, ratingCount, isActive | Index text trên name, brand; index trên categoryId, price |
+| products | name, slug, categoryId, brand, price, stock, description, specs (object tự do), imageId, ratingAvg, ratingCount, isActive | Tìm kiếm bằng regex không phân biệt hoa thường trên name, brand; index trên categoryId, price |
 | images | data (Buffer), contentType, size | Tách riêng để danh sách sản phẩm nhẹ |
 | carts | userId (unique), items [{productId, quantity}] | Không lưu giá |
 | orders | userId, requestKey, items [{productId, name, price, quantity}], shippingAddress, subtotal, discount, shippingFee, total, promotionCode, paymentMethod (cod/bank), paymentStatus (unpaid/pending/paid), status, deliveredAt | Items nhúng để lịch sử không đổi; unique (userId, requestKey) chống đặt trùng |
@@ -80,7 +80,8 @@ Quy tắc:
 - Tiền là số nguyên VND.
 - Trạng thái đơn: `pending → confirmed → shipping → delivered`; `cancelled` khi chưa paid.
 - COD bắt đầu `unpaid`, chuyển khoản bắt đầu `pending`; chỉ admin đặt `paid`.
-- Doanh thu chỉ tính đơn `delivered` và `paid`, theo `deliveredAt`.
+- Doanh thu chỉ tính đơn `delivered` và `paid`, theo `deliveredAt`; khoảng ngày `from`/`to` tính theo ngày giờ Việt Nam (+07:00).
+- Giỏ hàng, đơn hàng, validate mã giảm giá và gửi đánh giá chỉ dành cho customer (admin bị từ chối 403).
 - `ratingAvg`/`ratingCount` cập nhật khi có đánh giá.
 
 ## 4. API
@@ -90,17 +91,18 @@ Lỗi trả `{code, message}` (kèm `fieldErrors` khi sai dữ liệu form).
 | Nhóm | Endpoint | Quyền |
 |---|---|---|
 | Auth | POST /api/auth/register, /login, /logout; GET /api/auth/me | công khai |
-| Sản phẩm | GET /api/products?q=&category=&brand=&minPrice=&maxPrice=&sort=&page=; GET /api/products/:id | công khai |
-| | POST/PUT/DELETE /api/products (xóa = ẩn) | admin |
+| Sản phẩm | GET /api/products?q=&category=&brand=&minPrice=&maxPrice=&sort=&page=; GET /api/products/:id; GET /api/brands | công khai |
+| | POST/PUT/DELETE /api/products (xóa = ẩn); GET /api/admin/products (gồm cả sản phẩm đã ẩn) | admin |
 | Danh mục | GET /api/categories; POST/PUT/DELETE | đọc công khai, ghi admin |
+| | GET /api/admin/categories | admin |
 | Ảnh | GET /api/images/:id (cache); POST /api/images (multipart, `multer` lưu vào bộ nhớ) | đọc công khai, upload admin |
 | Giỏ hàng | GET /api/cart; POST /api/cart/items; PATCH/DELETE /api/cart/items/:productId | customer |
-| Đơn hàng | POST /api/orders; GET /api/orders; GET /api/orders/:id | customer (chỉ đơn của mình) |
+| Đơn hàng | POST /api/orders; GET /api/orders; GET /api/orders/:id; POST /api/orders/:id/cancel | customer (chỉ đơn của mình) |
 | | GET /api/admin/orders; PATCH /api/admin/orders/:id/status, /payment | admin |
 | Mã giảm giá | POST /api/promotions/validate; GET/POST/PUT /api/admin/promotions | validate: customer; còn lại admin |
 | Đánh giá | GET/POST /api/products/:id/reviews | đọc công khai, ghi customer |
 | Người dùng | GET /api/admin/users; PATCH /api/admin/users/:id/status | admin |
-| Thống kê | GET /api/admin/stats/revenue?from=&to= | admin |
+| Thống kê | GET /api/admin/stats/revenue?from=&to= (from/to là ngày theo giờ Việt Nam, +07:00) | admin |
 
 ### Luồng POST /api/orders (một transaction)
 1. Có đơn cùng `requestKey` thì trả đơn cũ.
@@ -124,7 +126,7 @@ Giao diện:
 - Admin: thống kê doanh thu; quản lý sản phẩm (upload ảnh), danh mục, đơn (đổi trạng thái, xác nhận đã thu tiền), người dùng, mã giảm giá.
 - Trạng thái đăng nhập lấy từ `GET /api/auth/me`, giữ bằng một React context nhỏ.
 
-Lỗi: lớp `AppError(code, status, message)` và middleware `errorHandler` chung của Express; dữ liệu vào kiểm tra bằng `zod`; lỗi không lường trước trả 500 chung, chi tiết chỉ ghi log. Mật khẩu băm bcrypt, cookie httpOnly + sameSite, không trả passwordHash, kiểm tra loại và dung lượng ảnh.
+Lỗi: lớp `AppError(status, code, message)` và middleware `errorHandler` chung của Express; dữ liệu vào kiểm tra bằng `zod`; lỗi không lường trước trả 500 chung, chi tiết chỉ ghi log. Mật khẩu băm bcrypt, cookie httpOnly + sameSite, không trả passwordHash, kiểm tra loại và dung lượng ảnh.
 
 Kiểm thử (chạy với MongoDB replica set thật, không mock DB):
 - Hai người cùng mua món còn 1: chỉ một đơn thành công.

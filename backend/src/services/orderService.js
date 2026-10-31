@@ -25,7 +25,16 @@ export async function create(userId, input) {
   const session = await mongoose.startSession();
   try {
     let order;
+    let replayed = false;
     await session.withTransaction(async () => {
+      // A retried transaction (write conflict) may find the order a concurrent identical request created.
+      replayed = false;
+      const prior = await Order.findOne({ userId, requestKey }).session(session);
+      if (prior) {
+        order = prior;
+        replayed = true;
+        return;
+      }
       const cart = await Cart.findOne({ userId }).session(session);
       if (!cart || cart.items.length === 0) {
         throw new AppError(400, 'CART_EMPTY', 'Giỏ hàng trống');
@@ -77,12 +86,10 @@ export async function create(userId, input) {
       );
       await Cart.updateOne({ userId }, { $set: { items: [] } }, { session });
     });
-    return { order, created: true };
+    return { order, created: !replayed };
   } catch (err) {
-    if (err?.code === 11000) {
-      const dup = await Order.findOne({ userId, requestKey });
-      if (dup) return { order: dup, created: false };
-    }
+    const dup = await Order.findOne({ userId, requestKey });
+    if (dup) return { order: dup, created: false };
     throw err;
   } finally {
     await session.endSession();

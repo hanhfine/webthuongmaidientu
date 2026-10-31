@@ -122,3 +122,25 @@ test('admins cannot place orders', async () => {
   const { agent } = await loginAs({ role: 'admin' });
   assert.equal((await agent.post('/api/orders').send(orderBody())).status, 403);
 });
+
+test('two identical concurrent requests (same requestKey): one creates, one replays', async () => {
+  const { agent, user } = await loginAs();
+  const p = await createProduct({ stock: 5 });
+  await addToCart(user._id, [[p, 2]]);
+  const body = orderBody();
+  const [r1, r2] = await Promise.all([agent.post('/api/orders').send(body), agent.post('/api/orders').send(body)]);
+  assert.deepEqual([r1.status, r2.status].sort(), [200, 201]);
+  assert.equal(r1.body._id, r2.body._id);
+  assert.equal((await Product.findById(p._id)).stock, 3);
+  assert.equal(await Order.countDocuments(), 1);
+});
+
+test('promo usage is not counted when the order fails', async () => {
+  const { agent, user } = await loginAs();
+  const p = await createProduct({ stock: 1 });
+  await createPromotion({ code: 'SALE10' });
+  await addToCart(user._id, [[p, 2]]);
+  const res = await agent.post('/api/orders').send(orderBody({ promotionCode: 'SALE10' }));
+  assert.equal(res.status, 409);
+  assert.equal((await Promotion.findOne({ code: 'SALE10' })).usedCount, 0);
+});

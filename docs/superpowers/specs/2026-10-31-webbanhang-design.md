@@ -21,7 +21,7 @@ Ngoài phạm vi: thanh toán thật, API vận chuyển, trả góp, chat, đa 
 
 ## 2. Kiến trúc
 
-Trình duyệt → Next.js (frontend) → `fetch /api/...` → Express route → Service → Model (Mongoose) → MongoDB.
+Trình duyệt → Next.js (frontend) → `fetch /api/...` → Route → Controller → Service → Model (Mongoose) → MongoDB.
 
 Next.js chuyển tiếp `/api/*` sang backend bằng `rewrites` trong `next.config.js`, nên trình duyệt chỉ thấy một origin. Nhờ đó cookie httpOnly hoạt động mà không cần cấu hình CORS phức tạp.
 
@@ -32,9 +32,11 @@ webbanhang/
 │  ├─ package.json
 │  ├─ src/
 │  │  ├─ server.js, app.js
-│  │  ├─ routes/             # khai báo endpoint, kiểm tra input (zod)
+│  │  ├─ routes/             # chỉ nối URL + middleware với controller
+│  │  ├─ controllers/        # nhận req, kiểm tra input (zod), gọi service, trả res
+│  │  ├─ validators/         # schema zod cho từng endpoint
 │  │  ├─ middleware/         # auth (JWT), requireRole, errorHandler
-│  │  ├─ services/           # nghiệp vụ
+│  │  ├─ services/           # nghiệp vụ, không biết req/res
 │  │  ├─ models/             # Mongoose schema
 │  │  └─ lib/                # db.js, errors.js
 │  ├─ scripts/seed.js        # admin, danh mục, sản phẩm mẫu
@@ -53,7 +55,10 @@ webbanhang/
 ```
 
 Nguyên tắc:
-- Route chỉ kiểm tra dữ liệu vào, kiểm tra quyền, gọi service, trả JSON.
+- **Route**: chỉ khai báo URL, gắn middleware (`auth`, `requireRole`) và trỏ tới controller.
+- **Controller**: lớp HTTP. Đọc `req`, kiểm tra dữ liệu vào bằng schema zod trong `validators/`, gọi đúng một hàm service, đặt mã trạng thái và trả JSON. Không chứa nghiệp vụ, không truy cập model.
+- **Service**: lớp nghiệp vụ. Nhận tham số thuần (không có `req`/`res`), ném `AppError` khi vi phạm quy tắc, là nơi duy nhất mở transaction và gọi model. Nhờ vậy kiểm thử service không cần dựng HTTP.
+- **Model**: schema Mongoose, không chứa nghiệp vụ.
 - Mọi nghiệp vụ nằm trong `services/`. Đặt hàng và trừ kho chạy trong một transaction.
 - Giá và tồn kho do server đọc lại khi đặt hàng; giá trong giỏ chỉ để hiển thị.
 - Quyền được thực thi ở backend. `middleware.js` của frontend chỉ chuyển hướng cho UX, không phải lớp bảo mật.

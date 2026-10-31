@@ -52,8 +52,8 @@ test('revenue counts only delivered AND paid orders, excluding shipping fee', as
   await makeOrder(user, { total: 1_030_000, status: 'delivered', paymentStatus: 'paid', deliveredAt: day });
   await makeOrder(user, { total: 530_000, status: 'delivered', paymentStatus: 'paid', deliveredAt: day });
   await makeOrder(user, { total: 999_000, status: 'delivered', paymentStatus: 'unpaid', deliveredAt: day });
-  await makeOrder(user, { total: 999_000, status: 'cancelled', paymentStatus: 'unpaid' });
-  await makeOrder(user, { total: 999_000, status: 'shipping', paymentStatus: 'paid' });
+  await makeOrder(user, { total: 999_000, status: 'cancelled', paymentStatus: 'paid', deliveredAt: day });
+  await makeOrder(user, { total: 999_000, status: 'shipping', paymentStatus: 'paid', deliveredAt: day });
   await makeOrder(user, { total: 700_000, status: 'delivered', paymentStatus: 'paid', deliveredAt: new Date('2026-09-01T05:00:00Z') });
 
   const res = await admin.agent.get('/api/admin/stats/revenue?from=2026-10-01&to=2026-10-31');
@@ -69,4 +69,36 @@ test('a date-only "to" includes that entire day', async () => {
   await makeOrder(user, { total: 130_000, status: 'delivered', paymentStatus: 'paid', deliveredAt: new Date('2026-10-31T12:00:00Z') });
   const res = await admin.agent.get('/api/admin/stats/revenue?from=2026-10-31&to=2026-10-31');
   assert.equal(res.body.orderCount, 1);
+});
+
+test('date-only bounds are Vietnam-local days (23:59:59.999 in, next 00:00 out)', async () => {
+  const admin = await loginAs({ role: 'admin' });
+  const { user } = await createUser();
+  await makeOrder(user, { total: 130_000, status: 'delivered', paymentStatus: 'paid', deliveredAt: new Date('2026-10-31T23:59:59.999+07:00') });
+  await makeOrder(user, { total: 130_000, status: 'delivered', paymentStatus: 'paid', deliveredAt: new Date('2026-11-01T00:00:00+07:00') });
+  const res = await admin.agent.get('/api/admin/stats/revenue?from=2026-10-01&to=2026-10-31');
+  assert.equal(res.status, 200);
+  assert.equal(res.body.orderCount, 1);
+  assert.deepEqual(res.body.byDay, [{ date: '2026-10-31', revenue: 100_000, orders: 1 }]);
+});
+
+test('an order delivered 2026-09-30T18:00Z (VN 1 Oct) counts for from=2026-10-01', async () => {
+  const admin = await loginAs({ role: 'admin' });
+  const { user } = await createUser();
+  await makeOrder(user, { total: 130_000, status: 'delivered', paymentStatus: 'paid', deliveredAt: new Date('2026-09-30T18:00:00Z') });
+  const res = await admin.agent.get('/api/admin/stats/revenue?from=2026-10-01&to=2026-10-31');
+  assert.equal(res.body.orderCount, 1);
+  assert.deepEqual(res.body.byDay, [{ date: '2026-10-01', revenue: 100_000, orders: 1 }]);
+});
+
+test('invalid date is rejected with 400', async () => {
+  const admin = await loginAs({ role: 'admin' });
+  assert.equal((await admin.agent.get('/api/admin/stats/revenue?from=not-a-date')).status, 400);
+  assert.equal((await admin.agent.get('/api/admin/stats/revenue?from=2026-02-31&to=2026-03-01')).status, 400);
+});
+
+test('from after to is rejected with 400', async () => {
+  const admin = await loginAs({ role: 'admin' });
+  const res = await admin.agent.get('/api/admin/stats/revenue?from=2026-10-31&to=2026-10-01');
+  assert.equal(res.status, 400);
 });

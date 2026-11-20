@@ -24,7 +24,7 @@ export default function ScrollShrinkHero() {
   );
 
   return (
-    <section ref={containerRef} className="relative w-full overflow-hidden bg-neutral-950 -mt-16 sm:-mt-20 pb-12 sm:pb-20">
+    <section ref={containerRef} className="relative w-full overflow-hidden bg-neutral-950 pb-12 sm:pb-20">
       <motion.div
         style={{
           scale,

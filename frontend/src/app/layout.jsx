@@ -10,7 +10,7 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="vi">
-      <body className="min-h-screen flex flex-col bg-[#fafafa] text-neutral-900 antialiased">
+      <body className="min-h-screen flex flex-col bg-[#fafafa] text-neutral-900 antialiased" suppressHydrationWarning>
         <AppProviders>
           <LayoutShell>{children}</LayoutShell>
         </AppProviders>

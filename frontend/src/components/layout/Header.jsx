@@ -90,7 +90,9 @@ export default function Header() {
 
   return (
     <header 
-      className={`sticky top-0 z-40 transition-all duration-300 ${
+      className={`${
+        isHome ? 'fixed top-0 left-0 right-0' : 'sticky top-0'
+      } z-50 transition-all duration-300 ${
         isTransparent
           ? 'bg-transparent border-transparent shadow-none'
           : 'bg-white/95 dark:bg-black/90 backdrop-blur-md border-b border-neutral-200/80 dark:border-neutral-800 shadow-sm'

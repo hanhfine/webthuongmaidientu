@@ -11,15 +11,15 @@ export default function ScrollShrinkHero() {
   // Track window scroll progress for smooth shrink animation
   const { scrollY } = useScroll();
 
-  // Transforms on scroll (over the first 420px of scroll):
-  // 1. Initially 1 (full width 100vw, full screen), shrinks smoothly to 0.92 (matching max-w-7xl below)
-  const scale = useTransform(scrollY, [0, 420], [1, 0.92]);
-  // 2. Sharp screen edges at top (0px) smoothly morph into rounded card corners (32px)
-  const borderRadius = useTransform(scrollY, [0, 420], [0, 32]);
-  // 3. Ambient elevation shadow as card floats on scroll
+  // Transforms on scroll:
+  // After ~2-3 mouse wheel scrolls (160px), banner smoothly shrinks to max-w-7xl card right in front of user
+  const scale = useTransform(scrollY, [0, 160], [1, 0.92]);
+  // Sharp screen edges at top (0px) smoothly morph into rounded card corners (32px)
+  const borderRadius = useTransform(scrollY, [0, 160], [0, 32]);
+  // Ambient elevation shadow as card floats on scroll
   const shadow = useTransform(
     scrollY,
-    [0, 420],
+    [0, 160],
     ['0px 0px 0px rgba(0,0,0,0)', '0px 25px 60px -15px rgba(0, 0, 0, 0.85)']
   );
 

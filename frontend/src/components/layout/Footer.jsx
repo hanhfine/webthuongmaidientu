@@ -117,17 +117,20 @@ export default function Footer() {
         {/* Legal, Corporate & Badges Section */}
         <div className="mt-12 pt-8 border-t border-neutral-200 dark:border-neutral-800 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
           <div className="space-y-1.5 max-w-2xl text-[11px] text-neutral-500">
-            <p className="font-semibold text-neutral-700 dark:text-neutral-300">
-              CÔNG TY TNHH THƯƠNG MẠI & CÔNG NGHỆ TECHSTORE VIỆT NAM
+            <p className="font-semibold text-neutral-800 dark:text-neutral-200">
+              HỆ THỐNG BÁN LẺ THIẾT BỊ CÔNG NGHỆ CHÍNH HÃNG TECHSTORE
             </p>
             <p>
-              Địa chỉ: Tòa nhà Bitexco, Bến Nghé, Quận 1, Thành phố Hồ Chí Minh, Việt Nam.
+              Trụ sở chính: Tầng 5, Tòa nhà TechStore, Cầu Giấy, Hà Nội | Chi nhánh: Quận 1, TP. Hồ Chí Minh.
             </p>
             <p>
-              GPĐKKD số: 0300741922 do Sở Kế hoạch và Đầu tư TP. Hồ Chí Minh cấp.
+              Hotline tư vấn & Đặt hàng: 1800 6868 (Miễn phí) | Email: support@techstore.vn
             </p>
-            <p className="pt-2">
-              Bản quyền © 1995-2026 TechStore. Bảo lưu mọi quyền.
+            <p className="text-[10px] text-neutral-400">
+              Đại lý phân phối ủy quyền chính hãng của Apple, Samsung, Dell, Asus, Xiaomi, Sony, Logitech, Anker.
+            </p>
+            <p className="pt-1.5 text-[10px] text-neutral-400">
+              Bản quyền © 2026 TechStore. Dự án xây dựng hệ thống website thương mại điện tử công nghệ.
             </p>
           </div>
 

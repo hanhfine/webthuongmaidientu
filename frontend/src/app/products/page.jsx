@@ -79,36 +79,38 @@ function CatalogContent() {
   const isStorefrontMode = !currentCategory && !currentQuery;
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
-      {isStorefrontMode ? (
-        /* MODE 1: TRANG CỬA HÀNG (Ảnh 3 - Showroom Flagship) */
-        <div className="space-y-12">
-          {/* 1. Lựa chọn tối ưu chuẩn sống của bạn (TabbedShowcase) */}
-          <TabbedShowcase />
+    <div className={isStorefrontMode ? "max-w-7xl mx-auto px-4 sm:px-6 py-8" : "bg-[#1c1c1e] min-h-screen py-8 -my-8"}>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6">
+        {isStorefrontMode ? (
+          /* MODE 1: TRANG CỬA HÀNG (Ảnh 3 - Showroom Flagship) */
+          <div className="space-y-12">
+            {/* 1. Lựa chọn tối ưu chuẩn sống của bạn (TabbedShowcase) */}
+            <TabbedShowcase />
 
-          {/* 2. Mua trực tiếp Nhận ngay ưu đãi (ShopPerks - 4 cards theo Ảnh 3) */}
-          <ShopPerks />
+            {/* 2. Mua trực tiếp Nhận ngay ưu đãi (ShopPerks - 4 cards theo Ảnh 3) */}
+            <ShopPerks />
 
-          {/* 3. Ưu đãi mới nhất (LatestDeals - Tabs Mới, Di động, TV, Gia dụng... 1 card lớn + 3 deal card theo Ảnh 3) */}
-          <LatestDeals />
+            {/* 3. Ưu đãi mới nhất (LatestDeals - 4 thẻ chuẩn hóa cân đối) */}
+            <LatestDeals />
 
-          {/* 4. Được đề xuất cho bạn (ShopRecommended - Grid sản phẩm bán chạy theo Ảnh 3) */}
-          <ShopRecommended />
-        </div>
-      ) : (
-        /* MODE 2: CÁC TRANG DANH MỤC CHUYÊN SÂU (Ảnh 4 - Điện thoại, Laptop...) */
-        <CategoryProductView
-          categorySlug={currentCategory}
-          products={products}
-          total={total}
-          currentSort={currentSort}
-          currentBrand={currentBrand}
-          currentMinPrice={currentMinPrice}
-          currentMaxPrice={currentMaxPrice}
-          updateFilters={updateFilters}
-          resetFilters={resetAllFilters}
-        />
-      )}
+            {/* 4. Được đề xuất cho bạn (ShopRecommended - Grid sản phẩm bán chạy theo Ảnh 3) */}
+            <ShopRecommended />
+          </div>
+        ) : (
+          /* MODE 2: CÁC TRANG DANH MỤC CHUYÊN SÂU (TopZone Style theo Ảnh 2) */
+          <CategoryProductView
+            categorySlug={currentCategory}
+            products={products}
+            total={total}
+            currentSort={currentSort}
+            currentBrand={currentBrand}
+            currentMinPrice={currentMinPrice}
+            currentMaxPrice={currentMaxPrice}
+            updateFilters={updateFilters}
+            resetFilters={resetAllFilters}
+          />
+        )}
+      </div>
     </div>
   );
 }

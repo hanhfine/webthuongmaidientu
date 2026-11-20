@@ -16,6 +16,7 @@ import {
   SlidersHorizontal
 } from 'lucide-react';
 import ProductCard from '@/components/product/ProductCard';
+import TabbedShowcase from '@/components/home/TabbedShowcase';
 import api from '@/lib/api';
 
 const PRICE_RANGES = [
@@ -130,10 +131,17 @@ function CatalogContent() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+      {/* 0. Flagship Interactive Showcase: Lựa chọn tối ưu chuẩn sống của bạn */}
+      {!currentQuery && (
+        <div className="mb-14 -mx-4 sm:-mx-6 border-b border-neutral-200/80 dark:border-neutral-800 pb-12">
+          <TabbedShowcase />
+        </div>
+      )}
+
       {/* 1. Category Title & Quick Category Pill Selector */}
       <div className="mb-8">
         <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-neutral-900 dark:text-white mb-6">
-          {currentQuery ? `Kết quả tìm kiếm cho "${currentQuery}"` : 'Danh Sách Sản Phẩm Công Nghệ'}
+          {currentQuery ? `Kết quả tìm kiếm cho "${currentQuery}"` : 'Tất Cả Sản Phẩm'}
         </h1>
 
         {/* Quick Horizontal Category Selectors */}

@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { 
   ShoppingBag, 
   Search, 
@@ -22,6 +22,9 @@ import MegaMenu from './MegaMenu';
 
 export default function Header() {
   const router = useRouter();
+  const pathname = usePathname();
+  const isHome = pathname === '/';
+
   const { user, isAdmin, logout, loading: authLoading } = useAuth();
   const { cartCount } = useCart();
 
@@ -30,9 +33,24 @@ export default function Header() {
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [isHeaderHovered, setIsHeaderHovered] = useState(false);
 
   const closeTimeoutRef = useRef(null);
   const userMenuRef = useRef(null);
+
+  // Track window scroll to switch transparent header to white on scroll
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 40);
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll();
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Header is transparent ONLY on Homepage when not scrolled, not hovered, and no dropdown is open
+  const isTransparent = isHome && !isScrolled && !isHeaderHovered && !activeMenuId && !mobileMenuOpen && !searchOpen && !userDropdownOpen;
 
   // Close user dropdown when clicking outside
   useEffect(() => {
@@ -72,8 +90,16 @@ export default function Header() {
 
   return (
     <header 
-      className="sticky top-0 z-40 bg-white/95 dark:bg-black/90 backdrop-blur-md border-b border-neutral-200/80 dark:border-neutral-800 transition-colors"
-      onMouseLeave={handleMouseLeave}
+      className={`sticky top-0 z-40 transition-all duration-300 ${
+        isTransparent
+          ? 'bg-transparent border-transparent shadow-none'
+          : 'bg-white/95 dark:bg-black/90 backdrop-blur-md border-b border-neutral-200/80 dark:border-neutral-800 shadow-sm'
+      }`}
+      onMouseEnter={() => setIsHeaderHovered(true)}
+      onMouseLeave={() => {
+        setIsHeaderHovered(false);
+        handleMouseLeave();
+      }}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <div className="flex items-center justify-between h-16 sm:h-20">
@@ -82,15 +108,21 @@ export default function Header() {
           <div className="flex items-center gap-3">
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden p-2 rounded-xl text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800"
+              className={`lg:hidden p-2 rounded-xl transition-colors ${
+                isTransparent
+                  ? 'text-white hover:bg-white/15'
+                  : 'text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800'
+              }`}
               aria-label="Toggle menu"
             >
               {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
 
             <Link href="/" className="flex items-center gap-2 group">
-              <span className="text-xl sm:text-2xl font-black tracking-tighter text-neutral-900 dark:text-white uppercase">
-                TECH<span className="text-brand-blue">STORE</span>
+              <span className={`text-xl sm:text-2xl font-black tracking-tighter uppercase transition-colors ${
+                isTransparent ? 'text-white' : 'text-neutral-900 dark:text-white'
+              }`}>
+                TECH<span className={isTransparent ? 'text-blue-400' : 'text-brand-blue'}>STORE</span>
               </span>
             </Link>
           </div>
@@ -108,13 +140,17 @@ export default function Header() {
                   <Link
                     href={item.href}
                     className={`px-3.5 py-1.5 text-sm font-medium rounded-full transition-all duration-200 flex items-center gap-1 ${
-                      isActive
+                      isTransparent
+                        ? 'text-white/90 hover:text-white hover:bg-white/15 font-semibold'
+                        : isActive
                         ? 'text-brand-blue bg-blue-50 dark:bg-blue-950/40 font-semibold'
                         : 'text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100/60 dark:hover:bg-neutral-800/60'
                     }`}
                   >
                     {item.label}
-                    <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${isActive ? 'rotate-180 text-brand-blue' : 'text-neutral-400'}`} />
+                    <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${
+                      isActive ? 'rotate-180 text-brand-blue' : isTransparent ? 'text-white/70' : 'text-neutral-400'
+                    }`} />
                   </Link>
                 </div>
               );
@@ -126,7 +162,11 @@ export default function Header() {
             {/* Search Button */}
             <button
               onClick={() => setSearchOpen(!searchOpen)}
-              className="p-2.5 rounded-full text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+              className={`p-2.5 rounded-full transition-colors ${
+                isTransparent
+                  ? 'text-white hover:bg-white/15'
+                  : 'text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800'
+              }`}
               aria-label="Tìm kiếm sản phẩm"
             >
               <Search className="w-5 h-5" />
@@ -135,7 +175,11 @@ export default function Header() {
             {/* Cart Icon with Counter Badge */}
             <Link
               href="/cart"
-              className="relative p-2.5 rounded-full text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+              className={`relative p-2.5 rounded-full transition-colors ${
+                isTransparent
+                  ? 'text-white hover:bg-white/15'
+                  : 'text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800'
+              }`}
               aria-label="Giỏ hàng"
             >
               <ShoppingBag className="w-5 h-5" />
@@ -150,14 +194,24 @@ export default function Header() {
             <div className="relative" ref={userMenuRef}>
               <button
                 onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-                className="flex items-center gap-2 p-1.5 sm:px-3 sm:py-1.5 rounded-full text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors border border-transparent hover:border-neutral-200 dark:hover:border-neutral-700"
+                className={`flex items-center gap-2 p-1.5 sm:px-3 sm:py-1.5 rounded-full transition-colors border ${
+                  isTransparent
+                    ? 'text-white border-white/20 hover:bg-white/15'
+                    : 'text-neutral-700 dark:text-neutral-300 border-transparent hover:border-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800'
+                }`}
                 aria-label="Tài khoản"
               >
-                <div className="w-8 h-8 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center text-neutral-700 dark:text-neutral-300 font-semibold text-xs border border-neutral-200 dark:border-neutral-700">
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center font-semibold text-xs border ${
+                  isTransparent
+                    ? 'bg-white/20 text-white border-white/30'
+                    : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 border-neutral-200 dark:border-neutral-700'
+                }`}>
                   {user ? user.fullName?.charAt(0).toUpperCase() || 'U' : <User className="w-4 h-4" />}
                 </div>
                 {user && (
-                  <span className="hidden sm:inline text-xs font-medium max-w-[100px] truncate text-neutral-800 dark:text-neutral-200">
+                  <span className={`hidden sm:inline text-xs font-medium max-w-[100px] truncate ${
+                    isTransparent ? 'text-white' : 'text-neutral-800 dark:text-neutral-200'
+                  }`}>
                     {user.fullName || user.email}
                   </span>
                 )}

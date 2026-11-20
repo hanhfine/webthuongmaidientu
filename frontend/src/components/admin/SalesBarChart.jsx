@@ -56,17 +56,24 @@ export default function SalesBarChart({ refreshKey = 0 }) {
 
         setChartData(points);
       } catch (err) {
-        // Fallback demo points if backend DB has not delivered orders yet
-        setChartData([
-          { dayLabel: 'T4', value: 0 },
-          { dayLabel: 'T5', value: 0 },
-          { dayLabel: 'T6', value: 0 },
-          { dayLabel: 'T7', value: 0 },
-          { dayLabel: 'CN', value: 18990000 },
-          { dayLabel: 'T2', value: 31990000 },
-          { dayLabel: 'T3', value: 31990000 },
-        ]);
-        setTotalRevenue(82970000);
+        // Show 0 revenue gracefully when no delivered orders exist yet
+        const now = new Date();
+        const days = timeRange === '7d' ? 7 : 14;
+        const past = new Date();
+        past.setDate(now.getDate() - (days - 1));
+        const dayNames = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+        const emptyPoints = [];
+        for (let i = 0; i < days; i++) {
+          const d = new Date(past);
+          d.setDate(past.getDate() + i);
+          emptyPoints.push({
+            date: d.toISOString().split('T')[0],
+            dayLabel: dayNames[d.getDay()],
+            value: 0,
+          });
+        }
+        setChartData(emptyPoints);
+        setTotalRevenue(0);
       } finally {
         setLoading(false);
       }

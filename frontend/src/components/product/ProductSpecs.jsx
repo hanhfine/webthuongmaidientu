@@ -1,20 +1,12 @@
 export default function ProductSpecs({ specs, brand = '' }) {
-  // Fallback specs if none provided
+  // Use real product specs, or generic official specs if not specified
   const displaySpecs = specs && Object.keys(specs).length > 0 
     ? specs 
     : {
-        'Kích thước màn hình': '6.8 inch, Dynamic AMOLED 2X, 120Hz',
-        'Độ phân giải': 'QHD+ (3120 x 1440 Pixels)',
-        'Hệ điều hành': 'Android 16 / One UI 8.0',
-        'Vi xử lý (CPU)': `${brand || 'Flagship'} AI Core Octa-core 3.4 GHz`,
-        'Bộ nhớ RAM': '12 GB / 16 GB LPDDR5X',
-        'Bộ nhớ trong': '256 GB / 512 GB / 1 TB UFS 4.0',
-        'Camera sau': 'Chính 200 MP + Góc siêu rộng 50 MP + Tele 50 MP (Zoom 100x)',
-        'Camera trước': '12 MP Dual Pixel AI',
-        'Dung lượng pin': '5.000 mAh, Sạc siêu nhanh 45W, Sạc không dây',
-        'Chất liệu khung viền': 'Titanium Grade 5 siêu bền',
-        'Chuẩn kháng nước': 'IP68 (ngâm nước 1.5m trong 30 phút)',
-        'Trọng lượng': '232 g',
+        'Thương hiệu': brand || 'Chính Hãng VN/A',
+        'Tình trạng': 'Mới 100% nguyên seal',
+        'Bảo hành': '12 tháng chính hãng toàn quốc',
+        'Bộ sản phẩm gồm': 'Thân máy/thiết bị, phụ kiện kèm theo, sách hướng dẫn sử dụng',
       };
 
   return (

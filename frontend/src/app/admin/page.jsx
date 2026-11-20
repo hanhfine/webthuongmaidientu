@@ -122,7 +122,7 @@ export default function AdminOverviewPage() {
               Doanh thu thực tế
             </span>
             <span className="text-xl sm:text-2xl font-black text-white block">
-              {formatVND(storeSales || 82970000)}
+              {formatVND(storeSales)}
             </span>
             <span className="text-[10px] text-[#c8dec9] block mt-0.5">
               Đơn đã giao & thu tiền
@@ -134,7 +134,7 @@ export default function AdminOverviewPage() {
               Đơn đang xử lý
             </span>
             <span className="text-xl sm:text-2xl font-black text-white block">
-              {String(ordersToPrepare || 6).padStart(2, '0')}
+              {String(ordersToPrepare).padStart(2, '0')}
             </span>
             <span className="text-[10px] text-[#c8dec9] block mt-0.5">
               Cần thao tác bước tiếp
@@ -146,10 +146,10 @@ export default function AdminOverviewPage() {
               Tồn kho sẵn sàng
             </span>
             <span className="text-xl sm:text-2xl font-black text-white block">
-              {totalUnitsOnHand || 202}
+              {totalUnitsOnHand}
             </span>
             <span className="text-[10px] text-[#c8dec9] block mt-0.5">
-              {lowStockCount || 4} mã cần nhập thêm
+              {lowStockCount} mã cần nhập thêm
             </span>
           </div>
         </div>
@@ -165,7 +165,7 @@ export default function AdminOverviewPage() {
             </div>
             <div>
               <p className="text-xs font-semibold text-[#6e8578]">Đơn cần đóng gói</p>
-              <p className="text-lg font-black text-[#1c3f30]">{ordersToPrepare || 4}</p>
+              <p className="text-lg font-black text-[#1c3f30]">{ordersToPrepare}</p>
             </div>
           </div>
           <span className="text-[11px] font-semibold text-[#6e8578]">Chờ xử lý</span>
@@ -179,7 +179,7 @@ export default function AdminOverviewPage() {
             </div>
             <div>
               <p className="text-xs font-semibold text-[#6e8578]">Sản phẩm đang bán</p>
-              <p className="text-lg font-black text-[#1c3f30]">{activeListings || 8}</p>
+              <p className="text-lg font-black text-[#1c3f30]">{activeListings}</p>
             </div>
           </div>
           <span className="text-[11px] font-semibold text-[#6e8578]">Sẵn sàng mua</span>
@@ -193,7 +193,7 @@ export default function AdminOverviewPage() {
             </div>
             <div>
               <p className="text-xs font-semibold text-[#6e8578]">Cảnh báo tồn kho</p>
-              <p className="text-lg font-black text-[#1c3f30]">{lowStockCount || 4}</p>
+              <p className="text-lg font-black text-[#1c3f30]">{lowStockCount}</p>
             </div>
           </div>
           <span className="text-[11px] font-semibold text-amber-700">Cần nhập sớm</span>
@@ -207,7 +207,7 @@ export default function AdminOverviewPage() {
             </div>
             <div>
               <p className="text-xs font-semibold text-[#6e8578]">Đã giao thành công</p>
-              <p className="text-lg font-black text-[#1c3f30]">{deliveredCount || 2}</p>
+              <p className="text-lg font-black text-[#1c3f30]">{deliveredCount}</p>
             </div>
           </div>
           <span className="text-[11px] font-semibold text-[#2d6a4f]">Hoàn tất</span>
@@ -273,42 +273,16 @@ export default function AdminOverviewPage() {
                           ? 'bg-purple-100 text-purple-800'
                           : 'bg-emerald-100 text-emerald-800'
                       }`}>
-                        {isNew ? 'New' : isPacking ? 'Packing' : isReady ? 'Ready to ship' : 'Delivered'}
+                        {isNew ? 'Chờ duyệt' : isPacking ? 'Đang đóng gói' : isReady ? 'Đang giao' : 'Đã giao'}
                       </span>
                     </div>
                   );
                 })
               ) : (
-                /* Fallback preview items from Tandem screenshot */
-                <>
-                  <div className="py-3 flex items-center justify-between">
-                    <div>
-                      <p className="text-xs font-bold text-[#1c3f30]">Nora Williams</p>
-                      <p className="text-[10px] text-[#788e81]">TD-4096 • 2 items</p>
-                    </div>
-                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">
-                      New
-                    </span>
-                  </div>
-                  <div className="py-3 flex items-center justify-between">
-                    <div>
-                      <p className="text-xs font-bold text-[#1c3f30]">Caleb Moore</p>
-                      <p className="text-[10px] text-[#788e81]">TD-4095 • 1 item</p>
-                    </div>
-                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800">
-                      Packing
-                    </span>
-                  </div>
-                  <div className="py-3 flex items-center justify-between">
-                    <div>
-                      <p className="text-xs font-bold text-[#1c3f30]">Ava Thompson</p>
-                      <p className="text-[10px] text-[#788e81]">TD-4094 • 1 item</p>
-                    </div>
-                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 text-purple-800">
-                      Ready to ship
-                    </span>
-                  </div>
-                </>
+                <div className="py-10 text-center text-xs text-[#788e81] space-y-1">
+                  <p className="font-semibold text-[#1c3f30]">Chưa có đơn hàng nào phát sinh</p>
+                  <p>Khi khách hàng đặt đơn, danh sách đơn mới sẽ tự động xuất hiện tại đây.</p>
+                </div>
               )}
             </div>
           </div>

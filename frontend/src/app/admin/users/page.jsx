@@ -27,9 +27,8 @@ export default function AdminUsersPage() {
     try {
       setLoading(true);
       const data = await api.get('/api/admin/users');
-      if (Array.isArray(data)) {
-        setUsers(data);
-      }
+      const userList = Array.isArray(data) ? data : (data?.items || []);
+      setUsers(userList);
     } catch (err) {
       toast.error('Không thể tải danh sách người dùng');
     } finally {

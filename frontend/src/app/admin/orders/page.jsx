@@ -31,9 +31,8 @@ export default function AdminOrdersPage() {
     try {
       setLoading(true);
       const data = await api.get('/api/admin/orders');
-      if (Array.isArray(data)) {
-        setOrders(data);
-      }
+      const orderList = Array.isArray(data) ? data : (data?.items || []);
+      setOrders(orderList);
     } catch (err) {
       toast.error('Không thể tải danh sách đơn hàng');
     } finally {

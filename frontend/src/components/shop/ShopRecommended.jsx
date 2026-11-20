@@ -13,9 +13,10 @@ export default function ShopRecommended() {
   useEffect(() => {
     async function loadRecommended() {
       try {
-        const res = await api.get('/api/products?sort=-ratingAvg&page=1');
-        if (res?.products && res.products.length > 0) {
-          setProducts(res.products.slice(0, 4));
+        const res = await api.get('/api/products?sort=rating&page=1');
+        const list = res?.products || res?.items || (Array.isArray(res) ? res : []);
+        if (list.length > 0) {
+          setProducts(list.slice(0, 4));
         }
       } catch (err) {
         // Fallback

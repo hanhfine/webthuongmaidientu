@@ -29,8 +29,10 @@ export default function AdminOverviewPage() {
           api.get('/api/admin/products').catch(() => ({ items: [] })),
         ]);
 
-        if (Array.isArray(ordersData)) setOrders(ordersData);
-        if (productsData?.items) setProducts(productsData.items);
+        const orderList = Array.isArray(ordersData) ? ordersData : (ordersData?.items || []);
+        const productList = Array.isArray(productsData) ? productsData : (productsData?.items || []);
+        setOrders(orderList);
+        setProducts(productList);
       } catch (err) {
         // Fallback
       } finally {

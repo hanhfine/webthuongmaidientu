@@ -22,7 +22,13 @@ export const searchSchema = z.object({
   brand: z.string().trim().optional(),
   minPrice: z.coerce.number().min(0).optional(),
   maxPrice: z.coerce.number().min(0).optional(),
-  sort: z.enum(['newest', 'price_asc', 'price_desc', 'rating']).default('newest'),
+  sort: z.preprocess((val) => {
+    if (val === '-ratingAvg' || val === '-rating' || val === 'ratingAvg') return 'rating';
+    if (val === '-price') return 'price_desc';
+    if (val === 'price' || val === '+price') return 'price_asc';
+    if (val === '-createdAt' || val === 'new') return 'newest';
+    return val;
+  }, z.enum(['newest', 'price_asc', 'price_desc', 'rating']).default('newest')),
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(50).default(12),
 });

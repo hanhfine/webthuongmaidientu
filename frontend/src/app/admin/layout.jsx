@@ -17,10 +17,9 @@ export default function AdminLayout({ children }) {
       if (!isAdmin) return;
       try {
         const orders = await api.get('/api/admin/orders');
-        if (Array.isArray(orders)) {
-          const pending = orders.filter((o) => ['pending', 'confirmed'].includes(o.status)).length;
-          setPendingOrdersCount(pending);
-        }
+        const orderList = Array.isArray(orders) ? orders : (orders?.items || []);
+        const pending = orderList.filter((o) => ['pending', 'confirmed'].includes(o.status)).length;
+        setPendingOrdersCount(pending);
       } catch (err) {
         // Fallback
       }

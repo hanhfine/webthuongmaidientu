@@ -36,9 +36,8 @@ export default function OrdersPage() {
       try {
         setLoading(true);
         const data = await api.get('/api/orders');
-        if (Array.isArray(data)) {
-          setOrders(data);
-        }
+        const orderList = Array.isArray(data) ? data : (data?.items || []);
+        setOrders(orderList);
       } catch (err) {
         setOrders([]);
       } finally {

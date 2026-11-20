@@ -25,15 +25,17 @@ export default function SalesBarChart({ refreshKey = 0 }) {
 
         const res = await api.get(`/api/admin/stats/revenue?from=${fromStr}&to=${toStr}`);
         
-        // Map response items to day buckets
+        // Map response items to day buckets ({ revenue, orderCount, byDay })
         const revenueMap = new Map();
-        let sum = 0;
-        if (Array.isArray(res)) {
-          res.forEach((r) => {
-            revenueMap.set(r.date, r.revenue);
-            sum += r.revenue;
-          });
-        }
+        const daysArray = Array.isArray(res) ? res : (res?.byDay || []);
+        let sum = typeof res?.revenue === 'number' ? res.revenue : 0;
+
+        daysArray.forEach((r) => {
+          revenueMap.set(r.date, r.revenue);
+          if (typeof res?.revenue !== 'number') {
+            sum += (r.revenue || 0);
+          }
+        });
         setTotalRevenue(sum);
 
         // Generate day points

@@ -18,7 +18,7 @@ export const NAV_ITEMS = [
         title: 'Khuyến Mãi Flagship',
         desc: 'Giảm tới 8.000.000đ khi thu cũ đổi mới',
         image: 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=500&q=80',
-        href: '/products?sort=-price',
+        href: '/products?sort=price_desc',
         tag: 'Hot',
       },
       {

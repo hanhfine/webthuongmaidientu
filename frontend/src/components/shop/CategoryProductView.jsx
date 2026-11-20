@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Filter, 
@@ -180,8 +181,10 @@ export default function CategoryProductView({
   updateFilters,
   resetFilters,
 }) {
+  const router = useRouter();
   const { addToCart } = useCart();
-  const { showToast } = useToast();
+  const toast = useToast();
+  const [addingId, setAddingId] = useState(null);
 
   const config = CATEGORY_CONFIGS[categorySlug] || CATEGORY_CONFIGS['dien-thoai'];
   const slides = config.slides;
@@ -619,13 +622,26 @@ export default function CategoryProductView({
                 {/* Action Buttons */}
                 <div className="pt-4 border-t border-neutral-100 space-y-2.5">
                   <button
+                    disabled={addingId === p._id}
                     onClick={async () => {
-                      await addToCart(p._id, 1);
-                      showToast(`Đã thêm ${p.name} (${selectedStorage}) vào giỏ hàng!`, 'success');
+                      try {
+                        setAddingId(p._id);
+                        await addToCart(p._id, 1);
+                        toast.success(`Đã thêm ${p.name} (${selectedStorage}) vào giỏ hàng!`);
+                      } catch (err) {
+                        toast.error(err.message || 'Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng');
+                        if (err.message && err.message.toLowerCase().includes('đăng nhập')) {
+                          setTimeout(() => {
+                            router.push('/login');
+                          }, 1200);
+                        }
+                      } finally {
+                        setAddingId(null);
+                      }
                     }}
-                    className="w-full py-3 rounded-2xl bg-neutral-900 hover:bg-black text-white text-xs font-bold tracking-wide transition-all shadow-md flex items-center justify-center gap-2"
+                    className="w-full py-3 rounded-2xl bg-neutral-900 hover:bg-black text-white text-xs font-bold tracking-wide transition-all shadow-md flex items-center justify-center gap-2 disabled:opacity-70"
                   >
-                    Mua Ngay
+                    {addingId === p._id ? 'Đang thêm...' : 'Mua Ngay'}
                   </button>
                   <Link
                     href={`/products/${p.slug}`}

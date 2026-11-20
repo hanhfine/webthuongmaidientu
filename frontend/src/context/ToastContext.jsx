@@ -27,6 +27,7 @@ export function ToastProvider({ children }) {
     success: (msg, dur) => addToast(msg, 'success', dur),
     error: (msg, dur) => addToast(msg, 'error', dur),
     info: (msg, dur) => addToast(msg, 'info', dur),
+    showToast: (msg, type = 'info', dur) => addToast(msg, type, dur),
   };
 
   return (

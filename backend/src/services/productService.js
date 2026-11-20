@@ -49,8 +49,14 @@ export async function search(query, { includeInactive = false } = {}) {
   return { items, products: items, total, totalPages, page, pageSize };
 }
 
-export async function getById(id, { includeInactive = false } = {}) {
-  const product = await Product.findById(toObjectId(id)).lean();
+export async function getById(idOrSlug, { includeInactive = false } = {}) {
+  let product = null;
+  if (typeof idOrSlug === 'string' && /^[0-9a-f]{24}$/i.test(idOrSlug)) {
+    product = await Product.findById(toObjectId(idOrSlug)).lean();
+  }
+  if (!product) {
+    product = await Product.findOne({ slug: idOrSlug }).lean();
+  }
   if (!product || (!includeInactive && !product.isActive)) {
     throw new AppError(404, 'NOT_FOUND', 'Không tìm thấy sản phẩm');
   }

@@ -31,6 +31,71 @@ const COLOR_OPTIONS = [
 
 const STORAGE_OPTIONS = ['256GB', '512GB', '1TB', '2TB'];
 
+// Helper to pick realistic high quality images for seeded catalog products
+const getProductGallery = (product) => {
+  if (product.imageId) return [`/api/images/${product.imageId}`];
+  if (product.images && product.images.length > 0) return product.images;
+
+  const name = (product.name || '').toLowerCase();
+  if (name.includes('s24') || name.includes('samsung') || name.includes('galaxy')) {
+    return [
+      'https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?w=900&q=85',
+      'https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=900&q=85',
+    ];
+  }
+  if (name.includes('xiaomi')) {
+    return [
+      'https://images.unsplash.com/photo-1598327105666-5b89351aff97?w=900&q=85',
+      'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=900&q=85',
+    ];
+  }
+  if (name.includes('macbook')) {
+    return [
+      'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=900&q=85',
+      'https://images.unsplash.com/photo-1611186871348-b1ce696e52c9?w=900&q=85',
+    ];
+  }
+  if (name.includes('dell') || name.includes('xps')) {
+    return [
+      'https://images.unsplash.com/photo-1593642632823-8f785ba67e45?w=900&q=85',
+      'https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?w=900&q=85',
+    ];
+  }
+  if (name.includes('asus') || name.includes('rog') || name.includes('thinkpad') || name.includes('lenovo')) {
+    return [
+      'https://images.unsplash.com/photo-1603302576837-37561b2e2302?w=900&q=85',
+      'https://images.unsplash.com/photo-1525547719571-a2d4ac8945e2?w=900&q=85',
+    ];
+  }
+  if (name.includes('phím') || name.includes('keychron') || name.includes('keyboard')) {
+    return [
+      'https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=900&q=85',
+      'https://images.unsplash.com/photo-1618384887929-16ec33fab9ef?w=900&q=85',
+    ];
+  }
+  if (name.includes('chuột') || name.includes('logitech') || name.includes('mouse')) {
+    return [
+      'https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?w=900&q=85',
+      'https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=900&q=85',
+    ];
+  }
+  if (name.includes('tai nghe') || name.includes('airpods') || name.includes('buds')) {
+    return [
+      'https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=900&q=85',
+      'https://images.unsplash.com/photo-1600294037681-c80b4cb5b434?w=900&q=85',
+    ];
+  }
+  if (name.includes('sạc') || name.includes('anker')) {
+    return [
+      'https://images.unsplash.com/photo-1622445262464-84b1456045b6?w=900&q=85',
+    ];
+  }
+  return [
+    'https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=900&q=85',
+    'https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=900&q=85',
+  ];
+};
+
 export default function ProductDetailPage({ params }) {
   const router = useRouter();
   const resolvedParams = use(params);
@@ -54,28 +119,7 @@ export default function ProductDetailPage({ params }) {
         const data = await api.get(`/api/products/${slugOrId}`);
         setProduct(data);
       } catch (err) {
-        // Fallback sample product for graceful presentation if seed data is limited
-        setProduct({
-          _id: slugOrId,
-          name: 'iPhone 18 Pro Max Titanium',
-          brand: 'Apple',
-          price: 41990000,
-          stock: 25,
-          ratingAvg: 4.9,
-          ratingCount: 380,
-          imageId: null,
-          description: 'Siêu phẩm công nghệ đột phá với chip xử lý Apple A20 Pro thế hệ mới, khung viền Titanium siêu bền và camera tele tiềm vọng thế hệ thứ 2.',
-          specs: {
-            'Màn hình': '6.9 inch, Super Retina XDR OLED, 120Hz ProMotion',
-            'Vi xử lý (CPU)': 'Apple A20 Pro 3nm Siêu Hiệu Năng',
-            'Bộ nhớ trong': '256 GB / 512 GB / 1 TB / 2 TB NVMe',
-            'Camera sau': 'Chính 48 MP Fusion + Góc rộng 48 MP + Telephoto 5x 48 MP',
-            'Camera trước': '12 MP TrueDepth with Face ID',
-            'Dung lượng pin': 'Hỗ trợ sạc nhanh 40W, MagSafe 25W',
-            'Chất liệu': 'Khung viền Titanium Grade 5 bóng bẩy',
-            'Hệ điều hành': 'iOS 20',
-          },
-        });
+        setProduct(null);
       } finally {
         setLoading(false);
       }
@@ -127,13 +171,7 @@ export default function ProductDetailPage({ params }) {
     );
   }
 
-  const galleryImages = product.imageId
-    ? [`/api/images/${product.imageId}`]
-    : [
-        'https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=900&q=85',
-        'https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=900&q=85',
-        'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=900&q=85',
-      ];
+  const galleryImages = getProductGallery(product);
 
   const vipPoints = Math.round((product.price * 0.002) || 83000);
 

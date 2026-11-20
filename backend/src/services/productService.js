@@ -23,7 +23,18 @@ export async function search(query, { includeInactive = false } = {}) {
     const re = new RegExp(escapeRegex(q), 'i');
     filter.$or = [{ name: re }, { brand: re }];
   }
-  if (category) filter.categoryId = toObjectId(category);
+  if (category) {
+    if (/^[0-9a-f]{24}$/i.test(category)) {
+      filter.categoryId = toObjectId(category);
+    } else {
+      const cat = await Category.findOne({ slug: category }).lean();
+      if (cat) {
+        filter.categoryId = cat._id;
+      } else {
+        return { items: [], products: [], total: 0, totalPages: 1, page, pageSize };
+      }
+    }
+  }
   if (brand) filter.brand = new RegExp(`^${escapeRegex(brand)}$`, 'i');
   if (minPrice !== undefined || maxPrice !== undefined) {
     filter.price = {};
@@ -34,7 +45,8 @@ export async function search(query, { includeInactive = false } = {}) {
     Product.find(filter).sort(SORTS[sort]).skip((page - 1) * pageSize).limit(pageSize).lean(),
     Product.countDocuments(filter),
   ]);
-  return { items, total, page, pageSize };
+  const totalPages = Math.ceil(total / pageSize) || 1;
+  return { items, products: items, total, totalPages, page, pageSize };
 }
 
 export async function getById(id, { includeInactive = false } = {}) {

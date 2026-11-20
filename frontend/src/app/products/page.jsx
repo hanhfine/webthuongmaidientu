@@ -60,7 +60,7 @@ function CatalogContent() {
         const queryStr = searchParams.toString();
         const res = await api.get(`/api/products?${queryStr}`);
         if (res) {
-          setProducts(res.products || []);
+          setProducts(res.products || res.items || []);
           setTotal(res.total || 0);
           setTotalPages(res.totalPages || 1);
         }
@@ -79,9 +79,8 @@ function CatalogContent() {
   const isStorefrontMode = !currentCategory && !currentQuery;
 
   return (
-    <div className={isStorefrontMode ? "max-w-7xl mx-auto px-4 sm:px-6 py-8" : "bg-[#1c1c1e] min-h-screen py-8 -my-8"}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6">
-        {isStorefrontMode ? (
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+      {isStorefrontMode ? (
           /* MODE 1: TRANG CỬA HÀNG (Ảnh 3 - Showroom Flagship) */
           <div className="space-y-12">
             {/* 1. Lựa chọn tối ưu chuẩn sống của bạn (TabbedShowcase) */}
@@ -110,7 +109,6 @@ function CatalogContent() {
             resetFilters={resetAllFilters}
           />
         )}
-      </div>
     </div>
   );
 }

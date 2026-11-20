@@ -35,6 +35,9 @@ const orderSchema = new Schema(
       default: 'pending',
     },
     deliveredAt: Date,
+    paidAt: Date,
+    // Ghi chú nội bộ cho quản trị viên (ví dụ: cảnh báo chuyển thiếu tiền)
+    adminNote: String,
   },
   { timestamps: true },
 );

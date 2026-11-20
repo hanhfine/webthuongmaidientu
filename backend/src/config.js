@@ -1,4 +1,6 @@
 const DEV_SECRET = 'dev-secret-change-me-dev-secret-change-me';
+// Secret token mặc định cho webhook trong môi trường dev/test
+const DEV_VIETQR_SECRET = 'dev-vietqr-secret-change-me';
 
 export function loadConfig(env) {
   const isDevLike = env.NODE_ENV === 'development' || env.NODE_ENV === 'test';
@@ -17,6 +19,7 @@ export function loadConfig(env) {
     mongoUri: env.MONGODB_URI ?? 'mongodb://localhost:27017/?directConnection=true',
     dbName: env.NODE_ENV === 'test' ? 'webbanhang_test' : (env.DB_NAME ?? 'webbanhang'),
     jwtSecret: env.JWT_SECRET || DEV_SECRET,
+    vietqrWebhookSecret: env.VIETQR_WEBHOOK_SECRET || DEV_VIETQR_SECRET,
     shippingFee: Number(rawFee),
     bank: {
       name: env.BANK_NAME ?? 'Vietcombank',

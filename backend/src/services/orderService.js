@@ -52,7 +52,11 @@ export async function create(userId, input) {
         );
         if (!product) {
           const current = await Product.findById(item.productId).session(session);
-          throw new AppError(409, 'OUT_OF_STOCK', `Sản phẩm "${current?.name ?? item.productId}" không đủ hàng`);
+          const msg =
+            current && !current.isActive
+              ? `Sản phẩm "${current.name}" đã ngừng kinh doanh`
+              : `Sản phẩm "${current?.name ?? item.productId}" không đủ hàng`;
+          throw new AppError(409, 'OUT_OF_STOCK', msg);
         }
         lines.push({ productId: product._id, name: product.name, price: product.price, quantity: item.quantity });
       }
@@ -89,8 +93,10 @@ export async function create(userId, input) {
     });
     return { order, created: !replayed };
   } catch (err) {
-    const dup = await Order.findOne({ userId, requestKey });
-    if (dup) return { order: dup, created: false };
+    if (err?.code === 11000) {
+      const dup = await Order.findOne({ userId, requestKey });
+      if (dup) return { order: dup, created: false };
+    }
     throw err;
   } finally {
     await session.endSession();
@@ -118,6 +124,12 @@ export const listAll = ({ status, ...opts } = {}) => page(status ? { status } : 
 
 export async function getMine(userId, id) {
   const order = await Order.findOne({ _id: toObjectId(id), userId }).lean();
+  if (!order) throw new AppError(404, 'NOT_FOUND', 'Không tìm thấy đơn hàng');
+  return order;
+}
+
+export async function getById(id) {
+  const order = await Order.findById(toObjectId(id)).lean();
   if (!order) throw new AppError(404, 'NOT_FOUND', 'Không tìm thấy đơn hàng');
   return order;
 }

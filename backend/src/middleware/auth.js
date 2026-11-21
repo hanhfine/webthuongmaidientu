@@ -11,6 +11,9 @@ export async function authenticate(req, res, next) {
   } catch {
     throw new AppError(401, 'UNAUTHENTICATED', 'Phiên đăng nhập không hợp lệ');
   }
+  if (!/^[0-9a-f]{24}$/i.test(String(payload.sub || ''))) {
+    throw new AppError(401, 'UNAUTHENTICATED', 'Phiên đăng nhập không hợp lệ');
+  }
   const user = await User.findById(payload.sub).select('role isActive');
   if (!user || !user.isActive) {
     throw new AppError(401, 'UNAUTHENTICATED', 'Phiên đăng nhập không hợp lệ');

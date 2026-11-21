@@ -45,3 +45,10 @@ test('PUT renames and updates slug', async () => {
   assert.equal(res.status, 200);
   assert.equal(res.body.slug, 'moi');
 });
+
+test('category name producing empty slug returns 400 validation error', async () => {
+  const { agent } = await loginAs({ role: 'admin' });
+  const res = await agent.post('/api/categories').send({ name: '---' });
+  assert.equal(res.status, 400);
+  assert.equal(res.body.code, 'VALIDATION');
+});

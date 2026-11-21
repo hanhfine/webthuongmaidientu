@@ -1,5 +1,8 @@
 .superpowers/
+.https-lab/
+certs/*.pem
 node_modules/
 .env
+.env*.local
 .next/
 .DS_Store

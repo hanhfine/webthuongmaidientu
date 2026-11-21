@@ -29,6 +29,9 @@ test('filters by category, brand and price range; sorts by price', async () => {
   assert.deepEqual(byBrand.body.items.map((p) => p.name), ['B']);
   const byPrice = await request(app).get('/api/products?minPrice=10000000&maxPrice=25000000');
   assert.deepEqual(byPrice.body.items.map((p) => p.name), ['B']);
+  const emptyBounds = await request(app).get('/api/products?minPrice=&maxPrice=');
+  assert.equal(emptyBounds.status, 200);
+  assert.equal(emptyBounds.body.total, 3);
 });
 
 test('paginates', async () => {
@@ -110,4 +113,28 @@ test('product create/update reject a well-formed but nonexistent imageId', async
   const put = await agent.put(`/api/products/${p._id}`).send({ imageId: ghost });
   assert.equal(put.status, 400);
   assert.equal(put.body.code, 'IMAGE_NOT_FOUND');
+});
+
+test('admin syncs electronics products from Fake Store API and DummyJSON into MongoDB', async () => {
+  const { agent } = await loginAs({ role: 'admin' });
+  const res = await agent.post('/api/admin/products/sync-fakestore');
+  assert.equal(res.status, 200);
+  assert.ok(res.body.syncedCount >= 75);
+  assert.equal(res.body.fakeStoreCount, 6);
+  assert.ok(res.body.dummyJsonCount >= 4);
+  assert.equal(res.body.extendedCount, 65);
+  assert.ok(Array.isArray(res.body.items));
+  assert.ok(res.body.items.every((p) => p.image && p.image.startsWith('https://')));
+  assert.ok(res.body.items.every((p) => Number.isInteger(p.price) && p.price >= 100_000));
+
+  const list = await request(app).get('/api/products?q=SanDisk');
+  assert.equal(list.status, 200);
+  assert.equal(list.body.total, 1);
+  assert.equal(list.body.items[0].brand, 'SanDisk');
+
+  const phoneList = await request(app).get('/api/products?q=iPhone 13 Pro');
+  assert.equal(phoneList.status, 200);
+  assert.equal(phoneList.body.total, 1);
+  assert.ok(Array.isArray(phoneList.body.items[0].images));
+  assert.ok(phoneList.body.items[0].images.length >= 2);
 });

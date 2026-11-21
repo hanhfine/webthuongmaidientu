@@ -1,7 +1,7 @@
 import { test, before, beforeEach, after } from 'node:test';
 import assert from 'node:assert/strict';
 import request from 'supertest';
-import { app, setup, resetDb, teardown, loginAs, createUser } from './helpers.js';
+import { app, setup, resetDb, teardown, loginAs, createUser, createProduct, placeOrder } from './helpers.js';
 import { Order } from '../src/models/Order.js';
 
 before(setup);
@@ -109,4 +109,25 @@ test('self-lock check is not bypassed by an uppercase-hex id', async () => {
   assert.equal(res.status, 400);
   assert.equal(res.body.code, 'CANNOT_LOCK_SELF');
   assert.equal(res.body.message, 'Không thể thay đổi trạng thái của chính bạn');
+});
+
+test('admin users DTO includes id and createdAt; admin order detail & public config work', async () => {
+  const admin = await loginAs({ role: 'admin' });
+  const customer = await loginAs({ email: 'dto@test.local' });
+  const usersRes = await admin.agent.get('/api/admin/users?q=dto@test.local');
+  assert.equal(usersRes.status, 200);
+  assert.equal(usersRes.body.items[0].id, String(customer.user._id));
+  assert.ok(usersRes.body.items[0].createdAt);
+
+  const p = await createProduct({ price: 500_000 });
+  const order = await placeOrder(customer.user, [[p, 1]], { paymentMethod: 'bank' });
+  const adminOrderRes = await admin.agent.get(`/api/admin/orders/${order._id}`);
+  assert.equal(adminOrderRes.status, 200);
+  assert.equal(adminOrderRes.body.paymentInfo.method, 'bank');
+  assert.equal((await customer.agent.get(`/api/admin/orders/${order._id}`)).status, 403);
+
+  const cfgRes = await request(app).get('/api/config');
+  assert.equal(cfgRes.status, 200);
+  assert.equal(typeof cfgRes.body.shippingFee, 'number');
+  assert.ok(cfgRes.body.bank.name && cfgRes.body.bank.account);
 });

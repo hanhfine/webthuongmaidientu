@@ -22,9 +22,6 @@ export default function RegisterPage() {
   const [lastName, setLastName] = useState('');
   const [firstName, setFirstName] = useState('');
   const [phone, setPhone] = useState('');
-  const [birthDay, setBirthDay] = useState('');
-  const [birthMonth, setBirthMonth] = useState('');
-  const [birthYear, setBirthYear] = useState('');
 
   const [loading, setLoading] = useState(false);
   const [generalError, setGeneralError] = useState('');
@@ -65,7 +62,9 @@ export default function RegisterPage() {
         phone: phone.trim() || undefined,
       });
       toast.success('Đăng ký tài khoản thành công!');
-      router.push('/');
+      const rawRedirect = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('redirect') : null;
+      const safeRedirect = rawRedirect && rawRedirect.startsWith('/') && !rawRedirect.startsWith('//') ? rawRedirect : null;
+      router.push(safeRedirect || '/');
     } catch (err) {
       setGeneralError(err.message || 'Không thể tạo tài khoản');
     } finally {
@@ -87,10 +86,10 @@ export default function RegisterPage() {
         <div className="bg-[#191a1d] border border-neutral-800 rounded-3xl p-8 sm:p-10 shadow-2xl">
           {/* Headline */}
           <div className="text-center mb-8">
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white mb-2 leading-snug">
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white mb-2 leading-snug text-balance">
               Tạo tài khoản TechStore của bạn
             </h1>
-            <p className="text-xs text-neutral-400">
+            <p className="text-xs text-neutral-300">
               Đăng ký nhanh chóng để nhận trọn bộ đặc quyền mua sắm và bảo hành VIP
             </p>
           </div>
@@ -107,13 +106,19 @@ export default function RegisterPage() {
           <form onSubmit={handleSubmit} className="space-y-5">
             {/* 1. Email with real-time inline validation */}
             <div>
-              <label className={`block text-xs font-medium mb-1.5 transition-colors ${
-                showEmailError ? 'text-red-500 font-semibold' : 'text-neutral-400'
-              }`}>
-                Email
+              <label
+                htmlFor="reg-email"
+                className={`block w-fit cursor-pointer text-xs font-medium mb-1.5 transition-colors ${
+                  showEmailError ? 'text-red-400 font-semibold' : 'text-neutral-300'
+                }`}
+              >
+                Email <span className="text-red-400">*</span>
               </label>
               <input
+                id="reg-email"
+                name="email"
                 type="email"
+                autoComplete="email"
                 required
                 value={email}
                 onChange={(e) => {
@@ -121,15 +126,15 @@ export default function RegisterPage() {
                   if (!emailTouched) setEmailTouched(true);
                 }}
                 onBlur={() => setEmailTouched(true)}
-                placeholder="name@example.com"
-                className={`w-full px-4 py-3 bg-[#24262b] border rounded-xl text-sm text-white placeholder-neutral-500 focus:outline-none transition-colors ${
+                placeholder="Nhập email của bạn"
+                className={`w-full px-4 py-3 bg-[#24262b] border rounded-xl text-sm text-white placeholder:text-neutral-400 focus:outline-none transition-colors ${
                   showEmailError
-                    ? 'border-red-500 focus:border-red-500 ring-1 ring-red-500'
-                    : 'border-neutral-700/80 focus:border-blue-500 focus:ring-1 focus:ring-blue-500'
+                    ? 'border-red-500 focus:border-red-500 ring-2 ring-red-500/20'
+                    : 'border-neutral-700/80 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20'
                 }`}
               />
               {showEmailError && (
-                <p className="text-[11px] text-red-500 mt-1.5 animate-in fade-in">
+                <p className="text-xs text-red-400 mt-1.5">
                   Địa chỉ email không hợp lệ.
                 </p>
               )}
@@ -137,46 +142,55 @@ export default function RegisterPage() {
 
             {/* 2. Password */}
             <div>
-              <label className="block text-xs font-medium text-neutral-400 mb-1.5">
-                Mật khẩu (tối thiểu 8 ký tự)
+              <label htmlFor="reg-password" className="block w-fit cursor-pointer text-xs font-medium text-neutral-300 mb-1.5">
+                Mật khẩu <span className="text-red-400">*</span>
               </label>
               <div className="relative">
                 <input
+                  id="reg-password"
+                  name="password"
                   type={showPassword ? 'text' : 'password'}
+                  autoComplete="new-password"
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Nhập mật khẩu"
-                  className="w-full px-4 py-3 pr-11 bg-[#24262b] border border-neutral-700/80 rounded-xl text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
+                  className="w-full px-4 py-3 pr-11 bg-[#24262b] border border-neutral-700/80 rounded-xl text-sm text-white placeholder:text-neutral-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-colors"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white"
+                  className="absolute right-1 inset-y-0 my-auto w-10 h-10 flex items-center justify-center text-neutral-400 hover:text-white cursor-pointer"
+                  aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
+              <p className="text-xs text-neutral-300 mt-1.5">Ít nhất 8 ký tự</p>
             </div>
 
             {/* 3. Confirm Password */}
             <div>
-              <label className="block text-xs font-medium text-neutral-400 mb-1.5">
-                Xác nhận mật khẩu
+              <label htmlFor="reg-confirm-password" className="block w-fit cursor-pointer text-xs font-medium text-neutral-300 mb-1.5">
+                Xác nhận mật khẩu <span className="text-red-400">*</span>
               </label>
               <div className="relative">
                 <input
+                  id="reg-confirm-password"
+                  name="confirmPassword"
                   type={showConfirmPassword ? 'text' : 'password'}
+                  autoComplete="new-password"
                   required
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="Nhập lại mật khẩu"
-                  className="w-full px-4 py-3 pr-11 bg-[#24262b] border border-neutral-700/80 rounded-xl text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
+                  className="w-full px-4 py-3 pr-11 bg-[#24262b] border border-neutral-700/80 rounded-xl text-sm text-white placeholder:text-neutral-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-colors"
                 />
                 <button
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white"
+                  className="absolute right-1 inset-y-0 my-auto w-10 h-10 flex items-center justify-center text-neutral-400 hover:text-white cursor-pointer"
+                  aria-label={showConfirmPassword ? 'Ẩn mật khẩu xác nhận' : 'Hiện mật khẩu xác nhận'}
                 >
                   {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -186,97 +200,67 @@ export default function RegisterPage() {
             {/* 4. Full Name (Họ & Tên) */}
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-medium text-neutral-400 mb-1.5">
+                <label htmlFor="reg-lastname" className="block w-fit cursor-pointer text-xs font-medium text-neutral-300 mb-1.5">
                   Họ
                 </label>
                 <input
+                  id="reg-lastname"
+                  name="familyName"
                   type="text"
+                  autoComplete="family-name"
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
                   placeholder="Nguyễn"
-                  className="w-full px-4 py-3 bg-[#24262b] border border-neutral-700/80 rounded-xl text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-blue-500 transition-colors"
+                  className="w-full px-4 py-3 bg-[#24262b] border border-neutral-700/80 rounded-xl text-sm text-white placeholder:text-neutral-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-colors"
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-neutral-400 mb-1.5">
-                  Tên
+                <label htmlFor="reg-firstname" className="block w-fit cursor-pointer text-xs font-medium text-neutral-300 mb-1.5">
+                  Tên <span className="text-red-400">*</span>
                 </label>
                 <input
+                  id="reg-firstname"
+                  name="givenName"
                   type="text"
+                  autoComplete="given-name"
                   required
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
                   placeholder="Văn A"
-                  className="w-full px-4 py-3 bg-[#24262b] border border-neutral-700/80 rounded-xl text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-blue-500 transition-colors"
+                  className="w-full px-4 py-3 bg-[#24262b] border border-neutral-700/80 rounded-xl text-sm text-white placeholder:text-neutral-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-colors"
                 />
               </div>
             </div>
 
-            {/* 5. Phone Number & Date of Birth */}
+            {/* 5. Phone Number */}
             <div>
-              <label className="block text-xs font-medium text-neutral-400 mb-1.5">
+              <label htmlFor="reg-phone" className="block w-fit cursor-pointer text-xs font-medium text-neutral-300 mb-1.5">
                 Số điện thoại (tùy chọn)
               </label>
               <input
+                id="reg-phone"
+                name="tel"
                 type="tel"
+                autoComplete="tel"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 placeholder="0912 345 678"
-                className="w-full px-4 py-3 bg-[#24262b] border border-neutral-700/80 rounded-xl text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-blue-500 transition-colors"
+                className="w-full px-4 py-3 bg-[#24262b] border border-neutral-700/80 rounded-xl text-sm text-white placeholder:text-neutral-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-colors"
               />
-            </div>
-
-            {/* Date of Birth (Ngày / Tháng / Năm) */}
-            <div>
-              <label className="block text-xs font-medium text-neutral-400 mb-1.5">
-                Ngày sinh
-              </label>
-              <div className="grid grid-cols-3 gap-2">
-                <input
-                  type="number"
-                  min="1"
-                  max="31"
-                  value={birthDay}
-                  onChange={(e) => setBirthDay(e.target.value)}
-                  placeholder="Ngày"
-                  className="px-3 py-3 bg-[#24262b] border border-neutral-700/80 rounded-xl text-sm text-center text-white placeholder-neutral-500 focus:outline-none focus:border-blue-500 transition-colors"
-                />
-                <select
-                  value={birthMonth}
-                  onChange={(e) => setBirthMonth(e.target.value)}
-                  className="px-3 py-3 bg-[#24262b] border border-neutral-700/80 rounded-xl text-sm text-center text-white focus:outline-none focus:border-blue-500 transition-colors"
-                >
-                  <option value="">Tháng</option>
-                  {Array.from({ length: 12 }, (_, i) => (
-                    <option key={i + 1} value={i + 1}>
-                      Tháng {i + 1}
-                    </option>
-                  ))}
-                </select>
-                <input
-                  type="number"
-                  min="1940"
-                  max="2026"
-                  value={birthYear}
-                  onChange={(e) => setBirthYear(e.target.value)}
-                  placeholder="Năm"
-                  className="px-3 py-3 bg-[#24262b] border border-neutral-700/80 rounded-xl text-sm text-center text-white placeholder-neutral-500 focus:outline-none focus:border-blue-500 transition-colors"
-                />
-              </div>
             </div>
 
             {/* Action Buttons: Trở về & Tiếp */}
             <div className="grid grid-cols-2 gap-3 pt-4">
               <Link
                 href="/login"
-                className="py-3.5 px-4 rounded-xl bg-[#45474f] hover:bg-[#52545d] text-white text-sm font-semibold tracking-wide transition-all text-center"
+                className="py-3.5 px-4 rounded-xl bg-[#45474f] hover:bg-[#52545d] text-white text-sm font-semibold tracking-wide transition-colors text-center"
               >
                 Trở về
               </Link>
               <button
                 type="submit"
                 disabled={loading}
-                className="py-3.5 px-4 rounded-xl bg-[#2860e0] hover:bg-blue-600 text-white text-sm font-bold tracking-wide transition-all shadow-lg shadow-blue-900/30 disabled:opacity-50 flex items-center justify-center"
+                className="py-3.5 px-4 rounded-xl bg-brand-blue hover:bg-brand-blue-hover text-white text-sm font-bold tracking-wide transition-colors shadow-lg shadow-blue-900/30 disabled:opacity-50 flex items-center justify-center cursor-pointer"
               >
                 {loading ? (
                   <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -290,13 +274,12 @@ export default function RegisterPage() {
       </div>
 
       {/* Footer */}
-      <div className="max-w-4xl mx-auto text-center text-[11px] text-neutral-500 space-y-2">
-        <div className="flex flex-wrap justify-center gap-4">
-          <span className="hover:text-neutral-400 cursor-pointer">Điều khoản và Điều kiện</span>
-          <span>•</span>
-          <span className="hover:text-neutral-400 cursor-pointer">Thông báo về quyền riêng tư</span>
-          <span>•</span>
-          <span className="hover:text-neutral-400 cursor-pointer">Liên hệ với chúng tôi</span>
+      <div className="max-w-4xl mx-auto text-center text-xs text-neutral-400 space-y-2">
+        <div className="grid grid-cols-2 sm:flex sm:flex-wrap justify-center gap-x-5 gap-y-2">
+          <span className="hover:text-neutral-200 cursor-pointer whitespace-nowrap">Điều khoản và Điều kiện</span>
+          <span className="hover:text-neutral-200 cursor-pointer whitespace-nowrap">Thông báo về quyền riêng tư</span>
+          <span className="hover:text-neutral-200 cursor-pointer whitespace-nowrap">Thông báo</span>
+          <span className="hover:text-neutral-200 cursor-pointer whitespace-nowrap">Liên hệ với chúng tôi</span>
         </div>
         <p>Copyright © 1995-2026 TechStore. All Rights Reserved.</p>
       </div>

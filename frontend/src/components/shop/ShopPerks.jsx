@@ -48,7 +48,7 @@ export default function ShopPerks() {
         </h2>
         <Link
           href="/products"
-          className="hidden sm:inline-flex items-center gap-1 text-xs font-semibold px-4 py-2 rounded-full border border-neutral-300 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+          className="hidden sm:inline-flex items-center gap-1 text-xs font-semibold px-4 py-2 rounded-full border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200/80 dark:hover:bg-neutral-800 transition-colors"
         >
           Tìm hiểu thêm
           <ChevronRight className="w-3.5 h-3.5" />
@@ -71,14 +71,14 @@ export default function ShopPerks() {
                 <h3 className="text-base font-bold text-neutral-900 dark:text-white mb-2 leading-snug">
                   {perk.title}
                 </h3>
-                <p className="text-xs sm:text-sm text-neutral-500 dark:text-neutral-400 leading-relaxed mb-6">
+                <p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed mb-6 text-pretty">
                   {perk.desc}
                 </p>
               </div>
 
               <Link
                 href={perk.href}
-                className="inline-flex items-center gap-1 text-xs font-bold text-neutral-900 dark:text-white hover:text-brand-blue dark:hover:text-blue-400 group-hover:translate-x-0.5 transition-all"
+                className="inline-flex items-center gap-1 py-2 w-fit text-xs font-bold text-neutral-900 dark:text-white hover:text-brand-blue dark:hover:text-blue-400 transition-colors"
               >
                 {perk.linkText}
                 <ChevronRight className="w-3.5 h-3.5" />

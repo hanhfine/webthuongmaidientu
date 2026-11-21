@@ -34,11 +34,24 @@ export async function upsert(userId, productId, { rating, comment }) {
     throw new AppError(403, 'NOT_PURCHASED', 'Bạn chỉ có thể đánh giá sản phẩm đã nhận hàng');
   }
   const existing = await Review.findOne({ userId, productId: pid });
-  const review = await Review.findOneAndUpdate(
-    { userId, productId: pid },
-    { rating, comment },
-    { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true },
-  );
+  let review;
+  try {
+    review = await Review.findOneAndUpdate(
+      { userId, productId: pid },
+      { rating, comment },
+      { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true },
+    );
+  } catch (err) {
+    if (err?.code === 11000) {
+      review = await Review.findOneAndUpdate(
+        { userId, productId: pid },
+        { rating, comment },
+        { returnDocument: 'after' },
+      );
+    } else {
+      throw err;
+    }
+  }
   await recomputeRating(pid);
   return { review, created: !existing };
 }

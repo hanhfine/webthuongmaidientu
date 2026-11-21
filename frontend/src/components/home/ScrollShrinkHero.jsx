@@ -67,14 +67,14 @@ export default function ScrollShrinkHero() {
             <div className="flex flex-wrap items-center gap-4">
               <Link
                 href="/products"
-                className="px-8 py-4 rounded-full bg-brand-blue hover:bg-brand-blue-hover text-white text-sm font-bold tracking-wide shadow-lg shadow-blue-600/30 hover:shadow-blue-600/50 hover:scale-105 transition-all duration-300 flex items-center gap-2 group"
+                className="px-8 py-4 rounded-full bg-brand-blue hover:bg-brand-blue-hover text-white text-sm font-bold tracking-wide shadow-lg shadow-blue-600/30 transition-colors duration-300 flex items-center gap-2"
               >
                 Khám Phá Ngay
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                <ArrowRight className="w-4 h-4" />
               </Link>
               <Link
                 href="/products?category=dien-thoai"
-                className="px-8 py-4 rounded-full bg-white/10 hover:bg-white/15 backdrop-blur-md text-white text-sm font-semibold border border-white/20 hover:border-white/40 transition-all duration-300"
+                className="px-8 py-4 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md text-white text-sm font-semibold border border-white/20 hover:border-white/40 transition-colors duration-300"
               >
                 Xem Dòng Galaxy
               </Link>
@@ -89,7 +89,7 @@ export default function ScrollShrinkHero() {
               <img
                 src="https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=800&q=85"
                 alt="Galaxy Flagship Showcase"
-                className="w-full h-full object-contain filter drop-shadow-[0_25px_35px_rgba(0,113,227,0.35)] hover:scale-105 transition-transform duration-500"
+                className="w-full h-full object-contain filter drop-shadow-[0_25px_35px_rgba(0,113,227,0.35)]"
               />
             </div>
           </div>
@@ -97,15 +97,15 @@ export default function ScrollShrinkHero() {
 
         {/* Bottom Feature Badges Bar */}
         <div className="relative z-10 border-t border-white/10 bg-black/40 backdrop-blur-md py-4 px-6 sm:px-12 w-full">
-          <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4 text-xs text-neutral-300">
+          <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 items-center text-xs text-neutral-300">
             <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
               <span>Thu Cũ Đổi Mới: Trợ giá tới 8.000.000 ₫</span>
             </div>
-            <div className="hidden sm:block">
+            <div className="hidden sm:block sm:text-center">
               <span>Bảo Hành VIP Care+ Toàn Diện</span>
             </div>
-            <div>
+            <div className="sm:text-right">
               <span>Trả Góp 0% Lãi Suất Tới 24 Tháng</span>
             </div>
           </div>

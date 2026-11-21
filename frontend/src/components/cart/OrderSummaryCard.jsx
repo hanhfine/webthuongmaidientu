@@ -14,6 +14,7 @@ export default function OrderSummaryCard({
   onApplyPromo = () => {},
   onRemovePromo = () => {},
   isCheckoutPage = false,
+  isGuest = false,
   onProceed = null,
   proceedLoading = false,
   disabled = false,
@@ -47,8 +48,9 @@ export default function OrderSummaryCard({
     }
   };
 
-  const discountAmount = appliedPromo?.discount || 0;
-  const finalTotal = Math.max(0, subtotal - discountAmount + shippingFee);
+  const rawDiscount = appliedPromo?.discount || 0;
+  const discountAmount = Math.min(rawDiscount, subtotal);
+  const finalTotal = subtotal - discountAmount + shippingFee;
 
   return (
     <div className="rounded-3xl p-6 sm:p-7 bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 shadow-sm space-y-6 sticky top-24">
@@ -57,26 +59,30 @@ export default function OrderSummaryCard({
       </h3>
 
       {/* Voucher Input Box */}
-      {!appliedPromo ? (
+      {isGuest ? (
+        <div className="p-3.5 rounded-xl bg-neutral-50 dark:bg-neutral-800/60 border border-neutral-200/80 dark:border-neutral-700 text-xs text-neutral-600 dark:text-neutral-300 leading-relaxed">
+          Đăng nhập ở bước tiếp theo để áp dụng mã khuyến mãi thành viên.
+        </div>
+      ) : !appliedPromo ? (
         <form onSubmit={handleValidatePromo} className="space-y-2">
-          <label className="block text-xs font-semibold text-neutral-500">
+          <label className="block text-xs font-semibold text-neutral-600 dark:text-neutral-300">
             Mã khuyến mãi / Voucher
           </label>
           <div className="flex gap-2">
             <div className="relative flex-1">
-              <Tag className="w-4 h-4 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <Tag className="w-4 h-4 text-neutral-500 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
                 placeholder="Nhập mã (VD: WELCOME10)"
                 value={promoCodeInput}
                 onChange={(e) => setPromoCodeInput(e.target.value.toUpperCase())}
-                className="w-full pl-9 pr-3 py-2.5 bg-neutral-100 dark:bg-neutral-800 rounded-xl text-xs sm:text-sm font-semibold uppercase text-neutral-900 dark:text-white placeholder-neutral-400 border-none focus:ring-2 focus:ring-brand-blue"
+                className="w-full pl-9 pr-3 py-2.5 bg-neutral-100 dark:bg-neutral-800 rounded-xl text-xs sm:text-sm font-semibold uppercase text-neutral-900 dark:text-white placeholder-neutral-500 border-none focus:ring-2 focus:ring-brand-blue"
               />
             </div>
             <button
               type="submit"
               disabled={validating || !promoCodeInput.trim()}
-              className="px-5 py-2.5 rounded-xl bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 text-xs font-bold hover:bg-neutral-800 transition-colors disabled:opacity-40"
+              className="px-5 py-2.5 rounded-xl bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 text-xs font-bold hover:bg-neutral-800 transition-colors disabled:opacity-40 cursor-pointer"
             >
               {validating ? '...' : 'Áp dụng'}
             </button>
@@ -89,14 +95,14 @@ export default function OrderSummaryCard({
         /* Applied Promo Badge */
         <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center">
+            <div className="w-6 h-6 rounded-full bg-emerald-600 text-white flex items-center justify-center shrink-0">
               <Check className="w-3.5 h-3.5" />
             </div>
             <div>
               <p className="text-xs font-bold text-emerald-800 dark:text-emerald-300">
                 Mã: {appliedPromo.code}
               </p>
-              <p className="text-[11px] text-emerald-600 dark:text-emerald-400">
+              <p className="text-xs text-emerald-700 dark:text-emerald-400">
                 Tiết kiệm {formatVND(discountAmount)}
               </p>
             </div>
@@ -104,7 +110,7 @@ export default function OrderSummaryCard({
           <button
             type="button"
             onClick={onRemovePromo}
-            className="p-1 rounded-lg hover:bg-emerald-100 text-emerald-700 transition-colors"
+            className="p-1 rounded-lg hover:bg-emerald-100 text-emerald-700 transition-colors cursor-pointer"
             title="Gỡ mã giảm giá"
           >
             <X className="w-4 h-4" />
@@ -142,7 +148,7 @@ export default function OrderSummaryCard({
             <span className="text-base sm:text-lg font-black text-neutral-900 dark:text-white block">
               Tổng cộng:
             </span>
-            <span className="text-[11px] text-neutral-400">Đã bao gồm VAT</span>
+            <span className="text-xs text-neutral-600 dark:text-neutral-400">Đã bao gồm VAT</span>
           </div>
           <span className="text-2xl font-black text-brand-blue">
             {formatVND(finalTotal)}
@@ -153,12 +159,12 @@ export default function OrderSummaryCard({
       {/* CTA Button */}
       {!isCheckoutPage ? (
         <Link
-          href={disabled ? '#' : '/checkout'}
+          href={disabled ? '#' : isGuest ? '/login?redirect=/checkout' : '/checkout'}
           className={`w-full py-4 px-6 rounded-2xl bg-brand-blue hover:bg-brand-blue-hover text-white text-sm font-bold tracking-wide transition-all shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2 ${
             disabled ? 'opacity-50 pointer-events-none' : ''
           }`}
         >
-          Tiến Hành Thanh Toán
+          {isGuest ? 'Đăng nhập để thanh toán' : 'Tiến Hành Thanh Toán'}
           <ArrowRight className="w-4 h-4" />
         </Link>
       ) : (

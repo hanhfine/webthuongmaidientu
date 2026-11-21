@@ -3,21 +3,23 @@
  * e.g. 41990000 -> "41.990.000 ₫"
  */
 export function formatVND(amount) {
-  if (amount === undefined || amount === null || isNaN(amount)) {
-    return '0 ₫';
+  const num = typeof amount === 'number' ? amount : Number(amount);
+  if (amount === '' || amount === null || amount === undefined || typeof amount === 'boolean' || !Number.isFinite(num)) {
+    return '0\u00a0₫';
   }
+  const safe = Object.is(num, -0) ? 0 : num;
   return new Intl.NumberFormat('vi-VN', {
     style: 'currency',
     currency: 'VND',
     maximumFractionDigits: 0,
-  }).format(amount);
+  }).format(safe);
 }
 
 /**
  * Format date string to Vietnamese localized format
  */
 export function formatDate(dateString, includeTime = false) {
-  if (!dateString) return '';
+  if (dateString === null || dateString === undefined || dateString === '') return '';
   const date = new Date(dateString);
   if (isNaN(date.getTime())) return '';
 

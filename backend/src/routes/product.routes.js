@@ -7,6 +7,7 @@ router.get('/products', c.list);
 router.get('/products/:id', c.show);
 router.get('/brands', c.brands);
 router.get('/admin/products', requireAdmin, c.listAdmin);
+router.post('/admin/products/sync-fakestore', requireAdmin, c.syncFakeStore);
 router.post('/products', requireAdmin, c.create);
 router.put('/products/:id', requireAdmin, c.update);
 router.delete('/products/:id', requireAdmin, c.remove);

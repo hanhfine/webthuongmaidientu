@@ -60,6 +60,9 @@ export async function update(id, data) {
   if (!merged.success) {
     throw new AppError(400, 'VALIDATION', 'Dữ liệu không hợp lệ', merged.error.flatten().fieldErrors);
   }
+  if (merged.data.maxUses < existing.usedCount) {
+    throw new AppError(400, 'VALIDATION', 'Số lượt dùng tối đa không được nhỏ hơn số lượt đã dùng');
+  }
   const promo = await Promotion.findByIdAndUpdate(_id, data, { returnDocument: 'after' });
   if (!promo) throw new AppError(404, 'NOT_FOUND', 'Không tìm thấy mã giảm giá');
   return promo;

@@ -17,20 +17,25 @@ export class ApiError extends Error {
  * and standard error response parsing.
  */
 async function request(endpoint, options = {}) {
-  const url = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+  const url =
+    endpoint.startsWith('http://') || endpoint.startsWith('https://') || endpoint.startsWith('/')
+      ? endpoint
+      : `/${endpoint}`;
 
   const headers = {
     ...options.headers,
   };
 
+  let body = options.body;
   // If body is NOT FormData, default to application/json
-  if (options.body && !(options.body instanceof FormData)) {
+  if (body !== undefined && body !== null && !(body instanceof FormData)) {
     headers['Content-Type'] = 'application/json';
-    options.body = JSON.stringify(options.body);
+    body = typeof body === 'string' ? body : JSON.stringify(body);
   }
 
   const config = {
     ...options,
+    body,
     headers,
     credentials: 'include', // Crucial for sending & receiving httpOnly auth cookie
   };
@@ -49,14 +54,24 @@ async function request(endpoint, options = {}) {
 
   const contentType = response.headers.get('content-type');
   const isJson = contentType && contentType.includes('application/json');
-  const data = isJson ? await response.json() : await response.text();
+  let data = null;
+  if (isJson) {
+    try {
+      data = await response.json();
+    } catch {
+      data = null;
+    }
+  } else {
+    data = await response.text();
+  }
 
   if (!response.ok) {
     const errorData = typeof data === 'object' && data !== null ? data : {};
+    const textMessage = typeof data === 'string' && data.trim() ? data.trim() : null;
     throw new ApiError(
       response.status,
       errorData.code || 'UNKNOWN_ERROR',
-      errorData.message || response.statusText || 'Yêu cầu không thành công',
+      errorData.message || textMessage || response.statusText || 'Yêu cầu không thành công',
       errorData.fieldErrors || null
     );
   }

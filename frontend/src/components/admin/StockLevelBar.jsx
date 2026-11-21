@@ -2,7 +2,6 @@ export default function StockLevelBar({ stock = 0, threshold = 10 }) {
   // Determine health level
   const isOutOfStock = stock <= 0;
   const isLowStock = stock > 0 && stock <= threshold;
-  const isHealthy = stock > threshold;
 
   // Percentage for the bar (capped at 100%)
   const percentage = isOutOfStock ? 0 : Math.min(100, Math.round((stock / (threshold * 3)) * 100));
@@ -16,18 +15,18 @@ export default function StockLevelBar({ stock = 0, threshold = 10 }) {
               ? 'bg-neutral-300'
               : isLowStock
               ? 'bg-amber-500'
-              : 'bg-[#2d6a4f]'
+              : 'bg-brand-green-light'
           }`}
           style={{ width: `${Math.max(percentage, isOutOfStock ? 0 : 15)}%` }}
         />
       </div>
-      <p className="text-[10px] text-neutral-500 leading-tight">
+      <p className="text-xs leading-tight whitespace-nowrap">
         {isOutOfStock ? (
-          <span className="text-rose-600 font-semibold">Hết hàng</span>
+          <span className="text-red-700 font-semibold">Hết hàng</span>
         ) : isLowStock ? (
-          <span className="text-amber-600 font-semibold">Cần nhập sớm</span>
+          <span className="text-amber-700 font-semibold">Cần nhập sớm</span>
         ) : (
-          <span className="text-[#2d6a4f] font-semibold">Mức an toàn</span>
+          <span className="text-brand-green-light font-semibold">Mức an toàn</span>
         )}
       </p>
     </div>

@@ -2,15 +2,20 @@ import express from 'express';
 import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
 import routes from './routes/index.js';
+import { config } from './config.js';
 import { AppError } from './lib/errors.js';
 import { errorHandler } from './middleware/errorHandler.js';
+import { securityHeaders } from './middleware/security.js';
 import { pathTraversalGuard } from './middleware/pathTraversalGuard.js';
 import { express5MongoSanitize } from './middleware/mongoSanitize.js';
 
-export function createApp() {
+export function createApp({ forceHttps = config.forceHttps } = {}) {
   const app = express();
+  app.set('trust proxy', 1);
+  app.disable('x-powered-by');
 
-  // 1. Security HTTP Headers
+  // 1. Security Headers & HTTPS
+  app.use(securityHeaders({ forceHttps }));
   app.use(
     helmet({
       crossOriginResourcePolicy: { policy: 'cross-origin' },

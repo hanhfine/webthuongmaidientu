@@ -120,7 +120,7 @@ export default function Header() {
               {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
 
-            <Link href="/" className="flex items-center gap-2 group">
+            <Link href="/" className="flex items-center gap-2 py-1.5 group">
               <span className={`text-xl sm:text-2xl font-black tracking-tighter uppercase transition-colors ${
                 isTransparent ? 'text-white' : 'text-neutral-900 dark:text-white'
               }`}>
@@ -141,12 +141,12 @@ export default function Header() {
                 >
                   <Link
                     href={item.href}
-                    className={`px-3.5 py-1.5 text-sm font-medium rounded-full transition-all duration-200 flex items-center gap-1 ${
+                    className={`px-3.5 py-2 h-9 text-sm font-medium rounded-full transition-colors duration-200 flex items-center gap-1 whitespace-nowrap ${
                       isTransparent
-                        ? 'text-white/90 hover:text-white hover:bg-white/15 font-semibold'
+                        ? 'text-white/90 hover:text-white hover:bg-white/15'
                         : isActive
-                        ? 'text-brand-blue bg-blue-50 dark:bg-blue-950/40 font-semibold'
-                        : 'text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100/60 dark:hover:bg-neutral-800/60'
+                        ? 'text-brand-blue bg-blue-50 dark:bg-blue-950/40'
+                        : 'text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800/60'
                     }`}
                   >
                     {item.label}
@@ -160,53 +160,58 @@ export default function Header() {
           </nav>
 
           {/* 3. Right: Search, Cart Badge & User Profile */}
-          <div className="flex items-center gap-2 sm:gap-3">
-            {/* Search Button */}
+          <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
+            {/* Search Button / Inline Search Pill on Desktop */}
             <button
+              type="button"
               onClick={() => setSearchOpen(!searchOpen)}
-              className={`p-2.5 rounded-full transition-colors ${
+              className={`w-10 xl:w-auto h-10 xl:px-3.5 rounded-full transition-colors flex items-center justify-center gap-2 shrink-0 cursor-pointer ${
                 isTransparent
-                  ? 'text-white hover:bg-white/15'
-                  : 'text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800'
+                  ? 'text-white hover:bg-white/15 xl:bg-white/15 xl:border xl:border-white/25 xl:hover:bg-white/20'
+                  : 'text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200/70 dark:hover:bg-neutral-800 xl:bg-neutral-100 dark:xl:bg-neutral-800 xl:border xl:border-neutral-200/80 dark:xl:border-neutral-700'
               }`}
               aria-label="Tìm kiếm sản phẩm"
             >
-              <Search className="w-5 h-5" />
+              <Search className="w-5 h-5 xl:w-4 xl:h-4 shrink-0" />
+              <span className="hidden xl:inline text-xs font-medium whitespace-nowrap">Tìm sản phẩm...</span>
             </button>
 
-            {/* Cart Icon with Counter Badge */}
-            <Link
-              href="/cart"
-              className={`relative p-2.5 rounded-full transition-colors ${
-                isTransparent
-                  ? 'text-white hover:bg-white/15'
-                  : 'text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800'
-              }`}
-              aria-label="Giỏ hàng"
-            >
-              <ShoppingBag className="w-5 h-5" />
-              {cartCount > 0 && (
-                <span className="absolute top-1 right-1 min-w-[20px] h-5 px-1 bg-brand-blue text-white text-[11px] font-bold rounded-full flex items-center justify-center animate-in zoom-in-75">
-                  {cartCount > 99 ? '99+' : cartCount}
-                </span>
-              )}
-            </Link>
+            {/* Cart Icon with Counter Badge (Customer/Guest only) */}
+            {!isAdmin && (
+              <Link
+                href="/cart"
+                className={`relative w-10 h-10 rounded-full transition-colors flex items-center justify-center shrink-0 cursor-pointer ${
+                  isTransparent
+                    ? 'text-white hover:bg-white/15'
+                    : 'text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800'
+                }`}
+                aria-label="Giỏ hàng"
+              >
+                <ShoppingBag className="w-5 h-5" />
+                {cartCount > 0 && (
+                  <span className="absolute top-0.5 right-0.5 min-w-[20px] h-5 px-1 bg-brand-blue text-white text-xs font-bold rounded-full flex items-center justify-center tabular-nums">
+                    {cartCount > 99 ? '99+' : cartCount}
+                  </span>
+                )}
+              </Link>
+            )}
 
             {/* User Dropdown */}
-            <div className="relative" ref={userMenuRef}>
+            <div className="relative shrink-0" ref={userMenuRef}>
               <button
+                type="button"
                 onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-                className={`flex items-center gap-2 p-1.5 sm:px-3 sm:py-1.5 rounded-full transition-colors border ${
+                className={`group flex items-center gap-2 h-10 px-1 sm:px-2 rounded-full transition-colors border cursor-pointer ${
                   isTransparent
                     ? 'text-white border-white/20 hover:bg-white/15'
-                    : 'text-neutral-700 dark:text-neutral-300 border-transparent hover:border-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800'
+                    : 'text-neutral-700 dark:text-neutral-300 border-neutral-200/70 hover:bg-neutral-100 dark:hover:bg-neutral-800'
                 }`}
                 aria-label="Tài khoản"
               >
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center font-semibold text-xs border ${
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center font-semibold text-xs border transition-colors shrink-0 ${
                   isTransparent
                     ? 'bg-white/20 text-white border-white/30'
-                    : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 border-neutral-200 dark:border-neutral-700'
+                    : 'bg-neutral-200/80 group-hover:bg-white dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 border-neutral-200 dark:border-neutral-700'
                 }`}>
                   {user ? user.fullName?.charAt(0).toUpperCase() || 'U' : <User className="w-4 h-4" />}
                 </div>
@@ -263,24 +268,25 @@ export default function Header() {
                       </div>
 
                       <div className="py-1">
-                        {isAdmin && (
+                        {isAdmin ? (
                           <Link
                             href="/admin"
                             onClick={() => setUserDropdownOpen(false)}
-                            className="flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-brand-green hover:bg-brand-green-soft/40 transition-colors"
+                            className="flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-brand-green hover:bg-brand-green-soft/40 transition-colors cursor-pointer"
                           >
                             <LayoutDashboard className="w-4 h-4 text-brand-green" />
                             Trang Quản Trị (Seller Studio)
                           </Link>
+                        ) : (
+                          <Link
+                            href="/orders"
+                            onClick={() => setUserDropdownOpen(false)}
+                            className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
+                          >
+                            <Package className="w-4 h-4 text-neutral-400" />
+                            Đơn hàng của tôi
+                          </Link>
                         )}
-                        <Link
-                          href="/orders"
-                          onClick={() => setUserDropdownOpen(false)}
-                          className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
-                        >
-                          <Package className="w-4 h-4 text-neutral-400" />
-                          Đơn hàng của tôi
-                        </Link>
                       </div>
 
                       <div className="border-t border-neutral-100 dark:border-neutral-800 pt-1 mt-1">
@@ -367,7 +373,7 @@ export default function Header() {
               {user ? (
                 <div className="space-y-3">
                   <p className="text-sm font-semibold">{user.fullName || user.email}</p>
-                  {isAdmin && (
+                  {isAdmin ? (
                     <Link
                       href="/admin"
                       onClick={() => setMobileMenuOpen(false)}
@@ -375,14 +381,15 @@ export default function Header() {
                     >
                       Trang Quản Trị Admin
                     </Link>
+                  ) : (
+                    <Link
+                      href="/orders"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="block text-sm text-neutral-700 dark:text-neutral-300"
+                    >
+                      Đơn hàng của tôi
+                    </Link>
                   )}
-                  <Link
-                    href="/orders"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="block text-sm text-neutral-700 dark:text-neutral-300"
-                  >
-                    Đơn hàng của tôi
-                  </Link>
                   <button
                     onClick={async () => {
                       setMobileMenuOpen(false);

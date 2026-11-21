@@ -44,7 +44,7 @@ export default function Footer() {
               </div>
               <div>
                 <h5 className="font-semibold text-neutral-900 dark:text-white text-sm">Hỗ Trợ 24/7</h5>
-                <p className="text-neutral-500 text-xs mt-0.5">Hotline miễn phí 1800 xxxx</p>
+                <p className="text-neutral-600 text-xs mt-0.5">Hotline miễn phí 1800 6868</p>
               </div>
             </div>
           </div>
@@ -72,8 +72,8 @@ export default function Footer() {
             <ul className="space-y-2.5">
               <li><Link href="/products?category=dien-thoai" className="hover:text-brand-blue transition-colors">Điện thoại thông minh Flagship</Link></li>
               <li><Link href="/products?category=laptop" className="hover:text-brand-blue transition-colors">Máy tính bảng & Laptop Pro</Link></li>
-              <li><Link href="/products?category=thiet-bi-deo" className="hover:text-brand-blue transition-colors">Đồng hồ & Vòng đeo thông minh</Link></li>
-              <li><Link href="/products?category=thiet-bi-deo" className="hover:text-brand-blue transition-colors">Tai nghe không dây & Loa Hi-Res</Link></li>
+              <li><Link href="/products?category=phu-kien" className="hover:text-brand-blue transition-colors">Đồng hồ & Vòng đeo thông minh</Link></li>
+              <li><Link href="/products?category=phu-kien" className="hover:text-brand-blue transition-colors">Tai nghe không dây & Loa Hi-Res</Link></li>
               <li><Link href="/products?category=phu-kien" className="hover:text-brand-blue transition-colors">Phụ kiện & Củ sạc nhanh</Link></li>
             </ul>
           </div>
@@ -116,7 +116,7 @@ export default function Footer() {
 
         {/* Legal, Corporate & Badges Section */}
         <div className="mt-12 pt-8 border-t border-neutral-200 dark:border-neutral-800 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-          <div className="space-y-1.5 max-w-2xl text-[11px] text-neutral-500">
+          <div className="space-y-1.5 max-w-2xl text-xs text-neutral-600">
             <p className="font-semibold text-neutral-800 dark:text-neutral-200">
               HỆ THỐNG BÁN LẺ THIẾT BỊ CÔNG NGHỆ CHÍNH HÃNG TECHSTORE
             </p>
@@ -126,22 +126,22 @@ export default function Footer() {
             <p>
               Hotline tư vấn & Đặt hàng: 1800 6868 (Miễn phí) | Email: support@techstore.vn
             </p>
-            <p className="text-[10px] text-neutral-400">
+            <p className="text-xs text-neutral-600">
               Đại lý phân phối ủy quyền chính hãng của Apple, Samsung, Dell, Asus, Xiaomi, Sony, Logitech, Anker.
             </p>
-            <p className="pt-1.5 text-[10px] text-neutral-400">
+            <p className="pt-1.5 text-xs text-neutral-600">
               Bản quyền © 2026 TechStore. Dự án xây dựng hệ thống website thương mại điện tử công nghệ.
             </p>
           </div>
 
           {/* Ministry of Industry and Trade badges */}
-          <div className="flex items-center gap-3 shrink-0">
-            <div className="px-3 py-1.5 rounded-full border border-blue-600 text-blue-600 font-bold text-[10px] uppercase flex items-center gap-1">
-              <span className="w-2 h-2 rounded-full bg-blue-600" />
+          <div className="flex flex-wrap items-center gap-3 shrink-0">
+            <div className="px-3 py-1.5 rounded-full border border-blue-700 text-blue-700 font-bold text-xs uppercase flex items-center gap-1.5 whitespace-nowrap">
+              <span className="w-2 h-2 rounded-full bg-blue-700 shrink-0" />
               ĐÃ THÔNG BÁO BỘ CÔNG THƯƠNG
             </div>
-            <div className="px-3 py-1.5 rounded-full border border-red-600 text-red-600 font-bold text-[10px] uppercase flex items-center gap-1">
-              <span className="w-2 h-2 rounded-full bg-red-600" />
+            <div className="px-3 py-1.5 rounded-full border border-red-700 text-red-700 font-bold text-xs uppercase flex items-center gap-1.5 whitespace-nowrap">
+              <span className="w-2 h-2 rounded-full bg-red-700 shrink-0" />
               ĐÃ ĐĂNG KÝ BỘ CÔNG THƯƠNG
             </div>
           </div>

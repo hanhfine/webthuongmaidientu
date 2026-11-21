@@ -9,12 +9,17 @@ after(teardown);
 
 const valid = { email: 'An@Example.com', password: 'password123', fullName: 'Nguyễn An' };
 
-test('register creates a customer without exposing passwordHash', async () => {
-  const res = await request(app).post('/api/auth/register').send(valid);
+test('register creates a customer, sets httpOnly cookie, and /me works immediately', async () => {
+  const agent = request.agent(app);
+  const res = await agent.post('/api/auth/register').send(valid);
   assert.equal(res.status, 201);
   assert.equal(res.body.email, 'an@example.com');
   assert.equal(res.body.role, 'customer');
   assert.equal(res.body.passwordHash, undefined);
+  assert.match(res.headers['set-cookie'][0], /token=.*HttpOnly/i);
+  const me = await agent.get('/api/auth/me');
+  assert.equal(me.status, 200);
+  assert.equal(me.body.email, 'an@example.com');
 });
 
 test('register ignores a role field in the body', async () => {

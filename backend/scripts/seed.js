@@ -1,31 +1,25 @@
 import bcrypt from 'bcryptjs';
 import { connectDb, disconnectDb } from '../src/lib/db.js';
 import { User } from '../src/models/User.js';
-import { Category } from '../src/models/Category.js';
 import { Product } from '../src/models/Product.js';
 import { Promotion } from '../src/models/Promotion.js';
 import { slugify } from '../src/lib/slugify.js';
+import { syncFromFakeStoreApi } from '../src/services/productService.js';
 
-const CATALOG = {
-  'Điện thoại': [
-    ['iPhone 15 Pro 256GB', 'Apple', 28_990_000, { Màn_hình: '6.1 inch OLED', Chip: 'A17 Pro', RAM: '8GB' }],
-    ['iPhone 15 128GB', 'Apple', 19_990_000, { Màn_hình: '6.1 inch OLED', Chip: 'A16', RAM: '6GB' }],
-    ['Galaxy S24 Ultra', 'Samsung', 29_990_000, { Màn_hình: '6.8 inch AMOLED', Chip: 'Snapdragon 8 Gen 3', RAM: '12GB' }],
-    ['Xiaomi 14', 'Xiaomi', 17_990_000, { Màn_hình: '6.36 inch AMOLED', Chip: 'Snapdragon 8 Gen 3', RAM: '12GB' }],
-  ],
-  Laptop: [
-    ['MacBook Air M3 13"', 'Apple', 27_990_000, { CPU: 'Apple M3', RAM: '16GB', SSD: '512GB' }],
-    ['Dell XPS 13', 'Dell', 32_990_000, { CPU: 'Core Ultra 7', RAM: '16GB', SSD: '512GB' }],
-    ['ASUS ROG Zephyrus G14', 'ASUS', 42_990_000, { CPU: 'Ryzen 9', RAM: '32GB', SSD: '1TB' }],
-    ['Lenovo ThinkPad X1 Carbon', 'Lenovo', 38_990_000, { CPU: 'Core Ultra 7', RAM: '16GB', SSD: '512GB' }],
-  ],
-  'Phụ kiện': [
-    ['Tai nghe AirPods Pro 2', 'Apple', 5_490_000, { Kết_nối: 'Bluetooth 5.3', Chống_ồn: 'Có' }],
-    ['Sạc nhanh Anker 65W', 'Anker', 790_000, { Công_suất: '65W', Cổng: '2 USB-C, 1 USB-A' }],
-    ['Chuột Logitech MX Master 3S', 'Logitech', 2_290_000, { Kết_nối: 'Bluetooth / USB receiver' }],
-    ['Bàn phím cơ Keychron K2', 'Keychron', 2_190_000, { Layout: '75%', Switch: 'Gateron Brown' }],
-  ],
-};
+const LEGACY_PRODUCT_SLUGS = [
+  'iphone-15-pro-256gb',
+  'iphone-15-128gb',
+  'galaxy-s24-ultra',
+  'xiaomi-14',
+  'macbook-air-m3-13',
+  'dell-xps-13',
+  'asus-rog-zephyrus-g14',
+  'lenovo-thinkpad-x1-carbon',
+  'tai-nghe-airpods-pro-2',
+  'sac-nhanh-anker-65w',
+  'chuot-logitech-mx-master-3s',
+  'ban-phim-co-keychron-k2',
+].map(slugify);
 
 await connectDb();
 
@@ -37,26 +31,13 @@ await User.updateOne(
   { upsert: true },
 );
 
-for (const [catName, products] of Object.entries(CATALOG)) {
-  const cat = await Category.findOneAndUpdate(
-    { slug: slugify(catName) },
-    { $setOnInsert: { name: catName, slug: slugify(catName) } },
-    { upsert: true, returnDocument: 'after' },
-  );
-  for (const [name, brand, price, specs] of products) {
-    await Product.updateOne(
-      { slug: slugify(name) },
-      {
-        $setOnInsert: {
-          name, slug: slugify(name), categoryId: cat._id, brand, price, stock: 20,
-          description: `${name} chính hãng, bảo hành 12 tháng.`,
-          specs: Object.fromEntries(Object.entries(specs).map(([k, v]) => [k.replaceAll('_', ' '), v])),
-        },
-      },
-      { upsert: true },
-    );
-  }
-}
+// Remove legacy hardcoded sample products
+await Product.deleteMany({
+  $or: [
+    { slug: { $in: LEGACY_PRODUCT_SLUGS } },
+    { externalSource: null, imageId: null },
+  ],
+});
 
 await Promotion.updateOne(
   { code: 'WELCOME10' },
@@ -65,5 +46,8 @@ await Promotion.updateOne(
   { upsert: true },
 );
 
-console.log('Seeded: admin@shop.local, 3 categories, 12 products, promo WELCOME10');
+const fakeStoreSync = await syncFromFakeStoreApi();
+console.log(
+  `Seeded: admin@shop.local, 3 categories, ${fakeStoreSync.syncedCount} tech products (Fake Store API: ${fakeStoreSync.fakeStoreCount}, DummyJSON: ${fakeStoreSync.dummyJsonCount}, Extended Tech Catalog: ${fakeStoreSync.extendedCount}), promo WELCOME10`,
+);
 await disconnectDb();

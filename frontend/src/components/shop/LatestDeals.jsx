@@ -74,8 +74,8 @@ const DEAL_CARDS = {
       title: 'iPhone 15 Pro Max 256GB',
       promo: 'Giảm ngay 2.500.000 ₫ thanh toán thẻ',
       desc: 'Khung viền Titanium chuẩn hàng không vũ trụ, nút Action Button thông minh và chip A17 Pro.',
-      image: 'https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=600&q=80',
-      href: '/products?category=dien-thoai',
+      image: 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=600&q=80',
+      href: '/products?category=dien-thoai&brand=Apple',
     },
     {
       badge: 'Thời Thượng',
@@ -107,7 +107,7 @@ const DEAL_CARDS = {
       promo: 'Tặng kèm Loa Thanh Soundbar 6.5Tr',
       desc: 'Bộ xử lý NQ8 AI Gen3 nâng cấp hình ảnh lên chuẩn 8K ngoạn mục cùng âm thanh vòm Dolby Atmos.',
       image: 'https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?w=600&q=80',
-      href: '/products?category=tv-av',
+      href: '/products',
     },
     {
       badge: 'Nghệ Thuật',
@@ -117,7 +117,7 @@ const DEAL_CARDS = {
       promo: 'Tặng khung viền gỗ + 1 năm tranh bản quyền',
       desc: 'Màn hình chống phản sáng Matte Display biến không gian phòng khách thành bảo tàng nghệ thuật sống động.',
       image: 'https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?w=600&q=80',
-      href: '/products?category=tv-av',
+      href: '/products',
     },
     {
       badge: 'Điện Ảnh',
@@ -127,7 +127,7 @@ const DEAL_CARDS = {
       promo: 'Giảm trực tiếp 4.000.000 ₫',
       desc: 'Màu đen sâu thẳm, màu sắc rực rỡ với các điểm ảnh tự phát sáng chuẩn điện ảnh Hollywood.',
       image: 'https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?w=600&q=80',
-      href: '/products?category=tv-av',
+      href: '/products',
     },
     {
       badge: 'Âm Thanh Vòm',
@@ -137,7 +137,7 @@ const DEAL_CARDS = {
       promo: 'Giảm 30% khi mua kèm TV',
       desc: 'Công nghệ Q-Symphony đồng bộ hoàn hảo loa TV và loa thanh cho trải nghiệm rạp chiếu tại gia.',
       image: 'https://images.unsplash.com/photo-1545454675-3531b543be5d?w=600&q=80',
-      href: '/products?category=tv-av',
+      href: '/products?category=phu-kien',
     },
   ],
   'gia-dung': [
@@ -237,35 +237,38 @@ export default function LatestDeals() {
         <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-neutral-900 dark:text-white">
           Ưu đãi mới nhất
         </h2>
-        <p className="mt-1 text-xs sm:text-sm text-neutral-500">
+        <p className="mt-1 text-xs sm:text-sm text-neutral-600">
           Các chương trình khuyến mãi độc quyền và trợ giá lên đời tốt nhất hôm nay
         </p>
       </div>
 
       {/* Category Tabs */}
-      <div className="flex items-center gap-6 overflow-x-auto pb-3 mb-8 border-b border-neutral-200/80 dark:border-neutral-800 no-scrollbar">
-        {DEAL_TABS.map((tab) => {
-          const isActive = activeTab === tab.id;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`pb-3 text-sm font-bold transition-all relative shrink-0 ${
-                isActive
-                  ? 'text-neutral-900 dark:text-white'
-                  : 'text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-300'
-              }`}
-            >
-              {tab.label}
-              {isActive && (
-                <motion.div
-                  layoutId="activeDealTabUnderline"
-                  className="absolute bottom-0 left-0 right-0 h-0.5 bg-neutral-900 dark:bg-white"
-                />
-              )}
-            </button>
-          );
-        })}
+      <div className="mb-8">
+        <div className="flex items-center gap-6 overflow-x-auto pb-3 pr-10 sm:pr-0 border-b border-neutral-200/80 dark:border-neutral-800 no-scrollbar [mask-image:linear-gradient(to_right,black_calc(100%-32px),transparent)] sm:[mask-image:none]">
+          {DEAL_TABS.map((tab) => {
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setActiveTab(tab.id)}
+                className={`py-2 px-1 text-sm font-bold transition-colors relative shrink-0 cursor-pointer ${
+                  isActive
+                    ? 'text-neutral-900 dark:text-white'
+                    : 'text-neutral-600 hover:text-neutral-900 dark:hover:text-neutral-300'
+                }`}
+              >
+                {tab.label}
+                {isActive && (
+                  <motion.div
+                    layoutId="activeDealTabUnderline"
+                    className="absolute bottom-0 left-0 right-0 h-0.5 bg-neutral-900 dark:bg-white"
+                  />
+                )}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Uniform 4-Card Grid: All 4 cards have consistent, rich, balanced framing */}
@@ -284,7 +287,7 @@ export default function LatestDeals() {
               <Link
                 key={idx}
                 href={item.href}
-                className="group rounded-3xl overflow-hidden bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 shadow-sm hover:shadow-xl hover:border-neutral-300 dark:hover:border-neutral-700 transition-all flex flex-col justify-between"
+                className="group rounded-3xl overflow-hidden bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700 transition-colors flex flex-col justify-between"
               >
                 {/* 1. Top Image Showcase */}
                 <div className="relative aspect-[4/3] w-full overflow-hidden bg-neutral-950 flex items-center justify-center p-4">
@@ -292,10 +295,10 @@ export default function LatestDeals() {
                   <img
                     src={item.image}
                     alt={item.title}
-                    className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500 filter drop-shadow-lg"
+                    className="w-full h-full object-contain filter drop-shadow-lg"
                   />
                   {/* Badge */}
-                  <div className={`absolute top-3 left-3 px-3 py-1 rounded-full backdrop-blur-md text-[11px] font-bold flex items-center gap-1.5 border ${item.badgeColor}`}>
+                  <div className={`absolute top-3 left-3 px-3 py-1 rounded-full backdrop-blur-md text-xs font-bold flex items-center gap-1.5 border ${item.badgeColor}`}>
                     <BadgeIcon className="w-3 h-3" />
                     {item.badge}
                   </div>
@@ -307,10 +310,10 @@ export default function LatestDeals() {
                     <h3 className="text-base font-extrabold text-neutral-900 dark:text-white mb-1.5 leading-snug group-hover:text-brand-blue transition-colors line-clamp-1">
                       {item.title}
                     </h3>
-                    <p className="text-xs font-bold text-rose-600 dark:text-rose-400 mb-2">
+                    <p className="text-xs font-bold text-rose-700 dark:text-rose-400 mb-2">
                       {item.promo}
                     </p>
-                    <p className="text-xs text-neutral-500 dark:text-neutral-400 line-clamp-2 leading-relaxed">
+                    <p className="text-xs text-neutral-600 dark:text-neutral-400 line-clamp-2 leading-relaxed">
                       {item.desc}
                     </p>
                   </div>
@@ -318,7 +321,7 @@ export default function LatestDeals() {
                   {/* 3. Bottom Action Footer */}
                   <div className="pt-3 border-t border-neutral-100 dark:border-neutral-800 flex items-center justify-between text-xs font-bold text-neutral-900 dark:text-white group-hover:text-brand-blue transition-colors">
                     <span>Khám phá ngay</span>
-                    <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+                    <ArrowRight className="w-3.5 h-3.5" />
                   </div>
                 </div>
               </Link>

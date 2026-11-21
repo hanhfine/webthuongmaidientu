@@ -22,6 +22,7 @@ export async function getView(userId) {
       name: p?.name ?? '(sản phẩm đã bị xóa)',
       price: p?.price ?? 0,
       imageId: p?.imageId ? String(p.imageId) : null,
+      image: p?.image ?? null,
       stock: p?.stock ?? 0,
       quantity: i.quantity,
       available,
@@ -43,26 +44,43 @@ function assertStock(product, quantity) {
   }
 }
 
+async function withVersionRetry(fn) {
+  try {
+    return await fn();
+  } catch (err) {
+    if (err?.name === 'VersionError') {
+      return await fn();
+    }
+    throw err;
+  }
+}
+
 export async function addItem(userId, productId, quantity) {
   const product = await loadActiveProduct(productId);
-  const cart = await getOrCreate(userId);
-  const line = cart.items.find((i) => String(i.productId) === String(product._id));
-  const next = (line?.quantity ?? 0) + quantity;
-  assertStock(product, next);
-  if (line) line.quantity = next;
-  else cart.items.push({ productId: product._id, quantity });
-  await cart.save();
+  await withVersionRetry(async () => {
+    const cart = await getOrCreate(userId);
+    const line = cart.items.find((i) => String(i.productId) === String(product._id));
+    const next = (line?.quantity ?? 0) + quantity;
+    assertStock(product, next);
+    if (line) line.quantity = next;
+    else cart.items.push({ productId: product._id, quantity });
+    await cart.save();
+  });
   return getView(userId);
 }
 
 export async function setQuantity(userId, productId, quantity) {
   const product = await loadActiveProduct(productId);
-  assertStock(product, quantity);
-  const cart = await getOrCreate(userId);
-  const line = cart.items.find((i) => String(i.productId) === String(product._id));
-  if (!line) throw new AppError(404, 'NOT_FOUND', 'Sản phẩm không có trong giỏ');
-  line.quantity = quantity;
-  await cart.save();
+  await withVersionRetry(async () => {
+    const cart = await getOrCreate(userId);
+    const line = cart.items.find((i) => String(i.productId) === String(product._id));
+    if (!line) throw new AppError(404, 'NOT_FOUND', 'Sản phẩm không có trong giỏ');
+    if (quantity > product.stock && quantity >= line.quantity) {
+      assertStock(product, quantity);
+    }
+    line.quantity = quantity;
+    await cart.save();
+  });
   return getView(userId);
 }
 

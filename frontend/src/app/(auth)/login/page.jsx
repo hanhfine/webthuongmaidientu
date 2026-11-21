@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Eye, EyeOff, AlertCircle, QrCode } from 'lucide-react';
+import { Eye, EyeOff, AlertCircle, QrCode, Check } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
 
@@ -18,6 +18,14 @@ export default function LoginPage() {
   const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [redirectPath, setRedirectPath] = useState(null);
+
+  useEffect(() => {
+    const raw = new URLSearchParams(window.location.search).get('redirect');
+    if (raw && raw.startsWith('/') && !raw.startsWith('//')) {
+      setRedirectPath(raw);
+    }
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -34,9 +42,11 @@ export default function LoginPage() {
 
     try {
       setLoading(true);
-      await login(email.trim(), password);
+      const loggedInUser = await login(email.trim(), password);
       toast.success('Đăng nhập thành công!');
-      router.push('/');
+      const rawRedirect = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('redirect') : null;
+      const safeRedirect = rawRedirect && rawRedirect.startsWith('/') && !rawRedirect.startsWith('//') ? rawRedirect : null;
+      router.push(loggedInUser?.role === 'admin' ? '/admin' : safeRedirect || '/');
     } catch (err) {
       setError(err.message || 'Email hoặc mật khẩu không chính xác');
     } finally {
@@ -58,13 +68,13 @@ export default function LoginPage() {
         <div className="bg-[#191a1d] border border-neutral-800 rounded-3xl p-8 sm:p-10 shadow-2xl">
           {/* Headline */}
           <div className="text-center mb-8">
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white mb-2 leading-snug">
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white mb-2 leading-snug text-balance">
               Một tài khoản. Mọi thiết bị.
             </h1>
-            <p className="text-sm font-semibold text-neutral-300">
+            <p className="text-sm font-semibold text-neutral-200">
               Chỉ dành cho bạn.
             </p>
-            <p className="text-xs text-neutral-500 mt-1">
+            <p className="text-xs text-neutral-300 mt-1">
               Đăng nhập để bắt đầu trải nghiệm
             </p>
           </div>
@@ -81,41 +91,47 @@ export default function LoginPage() {
           <form onSubmit={handleSubmit} className="space-y-5">
             {/* Email Input */}
             <div>
-              <label className="block text-xs font-medium text-neutral-400 mb-1.5">
+              <label htmlFor="login-email" className="block w-fit cursor-pointer text-xs font-medium text-neutral-300 mb-1.5">
                 Địa chỉ email
               </label>
               <input
+                id="login-email"
+                name="email"
                 type="email"
+                autoComplete="email"
                 required
                 autoFocus
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="name@example.com"
-                className="w-full px-4 py-3 bg-[#24262b] border border-neutral-700/80 rounded-xl text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
+                placeholder="Nhập email của bạn"
+                className="w-full px-4 py-3 bg-[#24262b] border border-neutral-700/80 rounded-xl text-sm text-white placeholder:text-neutral-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-colors"
               />
             </div>
 
             {/* Password Input */}
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-xs font-medium text-neutral-400">
+                <label htmlFor="login-password" className="block w-fit cursor-pointer text-xs font-medium text-neutral-300">
                   Mật khẩu
                 </label>
               </div>
               <div className="relative">
                 <input
+                  id="login-password"
+                  name="password"
                   type={showPassword ? 'text' : 'password'}
+                  autoComplete="current-password"
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Nhập mật khẩu của bạn"
-                  className="w-full px-4 py-3 pr-11 bg-[#24262b] border border-neutral-700/80 rounded-xl text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
+                  className="w-full px-4 py-3 pr-11 bg-[#24262b] border border-neutral-700/80 rounded-xl text-sm text-white placeholder:text-neutral-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-colors"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white"
-                  aria-label="Ẩn hiện mật khẩu"
+                  className="absolute right-1 inset-y-0 my-auto w-10 h-10 flex items-center justify-center text-neutral-400 hover:text-white cursor-pointer"
+                  aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -124,14 +140,17 @@ export default function LoginPage() {
 
             {/* Remember Me Checkbox */}
             <div className="flex items-center">
-              <label className="flex items-center gap-2 text-xs text-neutral-400 cursor-pointer select-none">
+              <label className="relative inline-flex items-center gap-2.5 py-1.5 text-xs text-neutral-300 cursor-pointer select-none">
                 <input
                   type="checkbox"
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
-                  className="w-4 h-4 rounded border-neutral-700 bg-[#24262b] text-blue-600 focus:ring-blue-500"
+                  className="peer sr-only"
                 />
-                Nhớ ID của tôi
+                <span className="w-5 h-5 rounded-md border border-neutral-600 bg-[#24262b] peer-checked:bg-brand-blue peer-checked:border-brand-blue peer-focus-visible:ring-2 peer-focus-visible:ring-blue-500/40 flex items-center justify-center transition-colors shrink-0">
+                  {rememberMe && <Check className="w-3.5 h-3.5 text-white stroke-[2.5]" />}
+                </span>
+                <span>Nhớ ID của tôi</span>
               </label>
             </div>
 
@@ -139,7 +158,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3.5 px-4 rounded-xl bg-[#2860e0] hover:bg-blue-600 text-white text-sm font-bold tracking-wide transition-all shadow-lg shadow-blue-900/30 disabled:opacity-50 flex items-center justify-center"
+              className="w-full py-3.5 px-4 rounded-xl bg-brand-blue hover:bg-brand-blue-hover text-white text-sm font-bold tracking-wide transition-colors shadow-lg shadow-blue-900/30 disabled:opacity-50 flex items-center justify-center cursor-pointer"
             >
               {loading ? (
                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -150,12 +169,12 @@ export default function LoginPage() {
           </form>
 
           {/* Links: Find ID | Register */}
-          <div className="flex items-center justify-center gap-4 text-xs text-neutral-400 mt-6 pt-4 border-t border-neutral-800">
-            <span className="hover:text-white transition-colors cursor-pointer">
+          <div className="flex items-center justify-center gap-4 text-xs text-neutral-300 mt-6 pt-4 border-t border-neutral-800">
+            <span className="py-2 inline-block hover:text-white transition-colors cursor-pointer">
               Tìm ID
             </span>
-            <span className="text-neutral-600">•</span>
-            <Link href="/register" className="text-blue-400 hover:text-blue-300 font-semibold transition-colors">
+            <span className="text-neutral-400">•</span>
+            <Link href={redirectPath ? `/register?redirect=${encodeURIComponent(redirectPath)}` : '/register'} className="py-2 inline-block text-blue-400 hover:text-blue-300 font-semibold transition-colors">
               Tạo tài khoản
             </Link>
           </div>
@@ -201,15 +220,12 @@ export default function LoginPage() {
       </div>
 
       {/* Footer */}
-      <div className="max-w-4xl mx-auto text-center text-[11px] text-neutral-500 space-y-2">
-        <div className="flex flex-wrap justify-center gap-4">
-          <span className="hover:text-neutral-400 cursor-pointer">Điều khoản và Điều kiện</span>
-          <span>•</span>
-          <span className="hover:text-neutral-400 cursor-pointer">Thông báo về quyền riêng tư</span>
-          <span>•</span>
-          <span className="hover:text-neutral-400 cursor-pointer">Thông báo</span>
-          <span>•</span>
-          <span className="hover:text-neutral-400 cursor-pointer">Liên hệ với chúng tôi</span>
+      <div className="max-w-4xl mx-auto text-center text-xs text-neutral-400 space-y-2">
+        <div className="grid grid-cols-2 sm:flex sm:flex-wrap justify-center gap-x-5 gap-y-2">
+          <span className="hover:text-neutral-200 cursor-pointer whitespace-nowrap">Điều khoản và Điều kiện</span>
+          <span className="hover:text-neutral-200 cursor-pointer whitespace-nowrap">Thông báo về quyền riêng tư</span>
+          <span className="hover:text-neutral-200 cursor-pointer whitespace-nowrap">Thông báo</span>
+          <span className="hover:text-neutral-200 cursor-pointer whitespace-nowrap">Liên hệ với chúng tôi</span>
         </div>
         <p>Copyright © 1995-2026 TechStore. All Rights Reserved.</p>
       </div>

@@ -8,11 +8,19 @@ import { useToast } from '@/context/ToastContext';
 import { formatDate } from '@/lib/format';
 import api from '@/lib/api';
 
-export default function ProductReviews({ productId, ratingAvg = 4.8, ratingCount = 0 }) {
-  const { user, isCustomer } = useAuth();
+export default function ProductReviews({
+  productId,
+  ratingAvg = 0,
+  ratingCount = 0,
+  onReviewChange,
+}) {
+  const { user, isCustomer, isAdmin } = useAuth();
   const toast = useToast();
 
   const [reviews, setReviews] = useState([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
   const [loading, setLoading] = useState(true);
 
   // Form State
@@ -23,27 +31,29 @@ export default function ProductReviews({ productId, ratingAvg = 4.8, ratingCount
   const [formError, setFormError] = useState('');
   const [formSuccess, setFormSuccess] = useState(false);
 
-  // Fetch Reviews
-  useEffect(() => {
-    async function loadReviews() {
-      if (!productId) return;
-      try {
-        setLoading(true);
-        const data = await api.get(`/api/products/${productId}/reviews`);
-        if (data?.items) {
-          setReviews(data.items);
-        } else if (Array.isArray(data)) {
-          setReviews(data);
-        }
-      } catch (err) {
-        // Fallback or leave empty
-      } finally {
-        setLoading(false);
+  const loadReviews = async (targetPage = page) => {
+    if (!productId) return;
+    try {
+      setLoading(true);
+      const data = await api.get(`/api/products/${productId}/reviews?page=${targetPage}&pageSize=${pageSize}`);
+      if (data?.items) {
+        setReviews(data.items);
+        setTotal(data.total ?? data.items.length);
+      } else if (Array.isArray(data)) {
+        setReviews(data);
+        setTotal(data.length);
       }
+    } catch {
+      // Leave empty gracefully
+    } finally {
+      setLoading(false);
     }
+  };
 
-    loadReviews();
-  }, [productId]);
+  useEffect(() => {
+    loadReviews(page);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [productId, page]);
 
   const handleSubmitReview = async (e) => {
     e.preventDefault();
@@ -68,15 +78,19 @@ export default function ProductReviews({ productId, ratingAvg = 4.8, ratingCount
       setFormSuccess(true);
       toast.success('Cảm ơn bạn đã gửi đánh giá sản phẩm!');
       setComment('');
-      // Refresh reviews list
-      const data = await api.get(`/api/products/${productId}/reviews`);
-      if (data?.items) setReviews(data.items);
+      setPage(1);
+      await loadReviews(1);
+      onReviewChange?.();
     } catch (err) {
       setFormError(err.message || 'Chỉ có thể đánh giá sau khi đơn hàng đã được giao thành công.');
     } finally {
       setSubmitting(false);
     }
   };
+
+  const displayCount = ratingCount || total;
+  const displayAvg = displayCount > 0 ? Number(ratingAvg || 0) : 0;
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
   return (
     <div className="bg-white dark:bg-neutral-900 rounded-3xl p-6 sm:p-8 border border-neutral-200/80 dark:border-neutral-800 shadow-sm space-y-8">
@@ -92,13 +106,13 @@ export default function ProductReviews({ productId, ratingAvg = 4.8, ratingCount
         </div>
 
         <div className="flex items-center gap-4">
-          <div className="text-right">
+          <div className="text-right tabular-nums">
             <span className="text-3xl font-black text-neutral-900 dark:text-white">
-              {Number(ratingAvg || 4.8).toFixed(1)}
+              {displayAvg.toFixed(1)}
             </span>
             <span className="text-sm text-neutral-400"> / 5.0</span>
             <p className="text-xs text-neutral-500">
-              {ratingCount || reviews.length} lượt đánh giá
+              {displayCount} lượt đánh giá
             </p>
           </div>
 
@@ -107,7 +121,7 @@ export default function ProductReviews({ productId, ratingAvg = 4.8, ratingCount
               <Star
                 key={i}
                 className={`w-5 h-5 ${
-                  i < Math.round(ratingAvg || 5) ? 'fill-current' : 'text-neutral-200 dark:text-neutral-700'
+                  displayCount > 0 && i < Math.round(displayAvg) ? 'fill-current' : 'text-neutral-200 dark:text-neutral-700'
                 }`}
               />
             ))}
@@ -115,7 +129,8 @@ export default function ProductReviews({ productId, ratingAvg = 4.8, ratingCount
         </div>
       </div>
 
-      {/* 2. Submit Review Form */}
+      {/* 2. Submit Review Form (Customer / Login prompt only) */}
+      {!isAdmin && (
       <div className="p-5 sm:p-6 rounded-2xl bg-neutral-50/70 dark:bg-neutral-800/40 border border-neutral-200/70 dark:border-neutral-800">
         <h4 className="text-sm font-bold text-neutral-900 dark:text-white mb-3">
           Viết đánh giá của bạn
@@ -199,11 +214,12 @@ export default function ProductReviews({ productId, ratingAvg = 4.8, ratingCount
           </div>
         )}
       </div>
+      )}
 
       {/* 3. Existing Reviews List */}
       <div className="space-y-4">
-        <h4 className="text-sm font-bold text-neutral-900 dark:text-white">
-          Nhận xét gần đây ({reviews.length})
+        <h4 className="text-sm font-bold text-neutral-900 dark:text-white tabular-nums">
+          Nhận xét gần đây ({total})
         </h4>
 
         {loading ? (
@@ -215,7 +231,7 @@ export default function ProductReviews({ productId, ratingAvg = 4.8, ratingCount
         ) : reviews.length > 0 ? (
           <div className="divide-y divide-neutral-100 dark:divide-neutral-800">
             {reviews.map((rev, idx) => (
-              <div key={idx} className="py-4">
+              <div key={rev._id || idx} className="py-4">
                 <div className="flex items-center justify-between mb-1.5">
                   <div className="flex items-center gap-2">
                     <div className="w-7 h-7 rounded-full bg-blue-100 dark:bg-blue-950 flex items-center justify-center text-xs font-bold text-brand-blue">
@@ -225,7 +241,7 @@ export default function ProductReviews({ productId, ratingAvg = 4.8, ratingCount
                       {rev.user?.fullName || 'Khách hàng ẩn danh'}
                     </span>
                   </div>
-                  <span className="text-[11px] text-neutral-400">
+                  <span className="text-[11px] text-neutral-400 tabular-nums">
                     {formatDate(rev.createdAt)}
                   </span>
                 </div>
@@ -241,7 +257,7 @@ export default function ProductReviews({ productId, ratingAvg = 4.8, ratingCount
                   ))}
                 </div>
 
-                <p className="text-xs sm:text-sm text-neutral-700 dark:text-neutral-300 leading-relaxed">
+                <p className="text-xs sm:text-sm text-neutral-700 dark:text-neutral-300 leading-relaxed text-pretty">
                   {rev.comment}
                 </p>
               </div>
@@ -251,6 +267,32 @@ export default function ProductReviews({ productId, ratingAvg = 4.8, ratingCount
           <p className="text-xs text-neutral-400 italic">
             Chưa có đánh giá nào cho sản phẩm này. Hãy là người đầu tiên trải nghiệm và chia sẻ nhận xét!
           </p>
+        )}
+
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between pt-4 border-t border-neutral-100 dark:border-neutral-800 text-xs">
+            <span className="text-neutral-500 tabular-nums">
+              Trang {page} / {totalPages}
+            </span>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                disabled={page <= 1}
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                className="px-3 py-1.5 rounded-lg border border-neutral-200 dark:border-neutral-700 disabled:opacity-40 cursor-pointer"
+              >
+                ‹ Trước
+              </button>
+              <button
+                type="button"
+                disabled={page >= totalPages}
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                className="px-3 py-1.5 rounded-lg border border-neutral-200 dark:border-neutral-700 disabled:opacity-40 cursor-pointer"
+              >
+                Sau ›
+              </button>
+            </div>
+          </div>
         )}
       </div>
     </div>

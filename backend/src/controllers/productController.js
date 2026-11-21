@@ -14,3 +14,4 @@ export const remove = async (req, res) => {
   await service.archive(req.params.id);
   res.status(204).end();
 };
+export const syncFakeStore = async (req, res) => res.json(await service.syncFromFakeStoreApi());

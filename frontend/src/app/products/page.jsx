@@ -75,11 +75,18 @@ function CatalogContent() {
     fetchProducts();
   }, [searchParams]);
 
-  // Is this the Storefront Showroom mode (No category and no search) or Category specific mode?
-  const isStorefrontMode = !currentCategory && !currentQuery;
+  // Is this the Storefront Showroom mode (No filters/search/page) or Catalog filter mode?
+  const isStorefrontMode =
+    !currentCategory &&
+    !currentQuery &&
+    !currentBrand &&
+    !currentSort &&
+    !currentMinPrice &&
+    !currentMaxPrice &&
+    currentPage <= 1;
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+    <div className="max-w-7xl w-full min-w-0 mx-auto px-4 sm:px-6 py-8">
       {isStorefrontMode ? (
           /* MODE 1: TRANG CỬA HÀNG (Ảnh 3 - Showroom Flagship) */
           <div className="space-y-12">
@@ -96,11 +103,15 @@ function CatalogContent() {
             <ShopRecommended />
           </div>
         ) : (
-          /* MODE 2: CÁC TRANG DANH MỤC CHUYÊN SÂU (TopZone Style theo Ảnh 2) */
+          /* MODE 2: CÁC TRANG DANH MỤC CHUYÊN SÂU */
           <CategoryProductView
             categorySlug={currentCategory}
+            currentQuery={currentQuery}
             products={products}
             total={total}
+            currentPage={currentPage}
+            totalPages={totalPages}
+            loading={loading}
             currentSort={currentSort}
             currentBrand={currentBrand}
             currentMinPrice={currentMinPrice}

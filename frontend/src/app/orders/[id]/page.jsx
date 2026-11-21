@@ -2,27 +2,25 @@
 
 import { useState, useEffect, use } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { 
-  Package, 
-  Clock, 
-  MapPin, 
-  CreditCard, 
-  CheckCircle2, 
-  AlertTriangle, 
+import {
+  Package,
+  Clock,
+  MapPin,
+  CreditCard,
+  CheckCircle2,
+  AlertTriangle,
   ArrowLeft,
   XCircle,
-  Truck,
-  RotateCcw,
-  QrCode
+  QrCode,
 } from 'lucide-react';
-import { 
-  formatVND, 
-  formatDate, 
-  getOrderStatus, 
-  getPaymentStatus, 
-  getPaymentMethodLabel 
+import {
+  formatVND,
+  formatDate,
+  getOrderStatus,
+  getPaymentStatus,
+  getPaymentMethodLabel,
 } from '@/lib/format';
+import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
 import api from '@/lib/api';
 
@@ -34,9 +32,9 @@ const TIMELINE_STEPS = [
 ];
 
 export default function OrderDetailPage({ params }) {
-  const router = useRouter();
   const resolvedParams = use(params);
   const orderId = resolvedParams.id;
+  const { user, isAdmin, loading: authLoading } = useAuth();
   const toast = useToast();
 
   const [order, setOrder] = useState(null);
@@ -46,24 +44,33 @@ export default function OrderDetailPage({ params }) {
 
   useEffect(() => {
     async function loadOrder() {
+      if (authLoading) return;
+      if (!user) {
+        setLoading(false);
+        return;
+      }
       try {
         setLoading(true);
-        const data = await api.get(`/api/orders/${orderId}`);
+        const endpoint = isAdmin ? `/api/admin/orders/${orderId}` : `/api/orders/${orderId}`;
+        const data = await api.get(endpoint);
         setOrder(data);
       } catch (err) {
-        toast.error('Không tìm thấy thông tin đơn hàng');
+        setOrder(null);
+        toast.error(err.message || 'Không tìm thấy thông tin đơn hàng');
       } finally {
         setLoading(false);
       }
     }
 
     loadOrder();
-  }, [orderId]);
+  }, [orderId, user, isAdmin, authLoading, toast]);
 
   const handleCancelOrder = async () => {
     try {
       setCancelling(true);
-      const updated = await api.post(`/api/orders/${order._id}/cancel`);
+      const updated = isAdmin
+        ? await api.patch(`/api/admin/orders/${order._id}/status`, { status: 'cancelled' })
+        : await api.post(`/api/orders/${order._id}/cancel`);
       setOrder(updated);
       setShowCancelModal(false);
       toast.success('Đơn hàng đã được hủy thành công!');
@@ -74,7 +81,7 @@ export default function OrderDetailPage({ params }) {
     }
   };
 
-  if (loading) {
+  if (authLoading || loading) {
     return (
       <div className="max-w-7xl mx-auto px-6 py-20 text-center text-sm text-neutral-400">
         <div className="w-8 h-8 border-2 border-brand-blue border-t-transparent rounded-full animate-spin mx-auto mb-4" />
@@ -83,11 +90,24 @@ export default function OrderDetailPage({ params }) {
     );
   }
 
+  if (!user) {
+    return (
+      <div className="max-w-7xl mx-auto px-6 py-20 text-center space-y-2">
+        <h2 className="text-xl font-bold">Vui lòng đăng nhập để xem chi tiết đơn hàng</h2>
+        <Link href="/login" className="text-sm font-semibold text-brand-blue hover:underline">
+          Đăng nhập ngay
+        </Link>
+      </div>
+    );
+  }
+
+  const backHref = isAdmin ? '/admin/orders' : '/orders';
+
   if (!order) {
     return (
       <div className="max-w-7xl mx-auto px-6 py-20 text-center">
         <h2 className="text-xl font-bold mb-2">Không tìm thấy đơn hàng</h2>
-        <Link href="/orders" className="text-sm font-semibold text-brand-blue hover:underline">
+        <Link href={backHref} className="text-sm font-semibold text-brand-blue hover:underline">
           Xem danh sách đơn hàng
         </Link>
       </div>
@@ -97,13 +117,14 @@ export default function OrderDetailPage({ params }) {
   const isCancelled = order.status === 'cancelled';
   const statusInfo = getOrderStatus(order.status);
   const paymentInfo = getPaymentStatus(order.paymentStatus);
-
-  // An order can be cancelled only if pending or confirmed, and unpaid
   const canCancel = ['pending', 'confirmed'].includes(order.status) && order.paymentStatus !== 'paid';
+
+  const bankInfo = order.paymentInfo?.bank;
+  const transferContent =
+    order.paymentInfo?.transferContent || `DH${String(order._id).slice(-8).toUpperCase()}`;
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
-      {/* Top Header & Breadcrumb */}
       <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
         <div>
           <div className="flex items-center gap-3">
@@ -114,30 +135,30 @@ export default function OrderDetailPage({ params }) {
               #{order._id.slice(-8).toUpperCase()}
             </span>
           </div>
-          <p className="text-xs text-neutral-400 mt-1 flex items-center gap-1.5">
+          <p className="text-xs text-neutral-400 mt-1 flex items-center gap-1.5 tabular-nums">
             <Clock className="w-3.5 h-3.5" />
             Thời gian đặt hàng: {formatDate(order.createdAt, true)}
           </p>
         </div>
 
         <Link
-          href="/orders"
+          href={backHref}
           className="text-xs font-bold text-brand-blue hover:underline flex items-center gap-1.5"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
-          Danh sách đơn hàng
+          {isAdmin ? 'Quay lại Quản lý đơn hàng' : 'Danh sách đơn hàng'}
         </Link>
       </div>
 
       {/* 1. Order Status Timeline Bar */}
-      <div className="p-6 sm:p-8 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 shadow-sm mb-8">
+      <div className="p-6 sm:p-8 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 mb-8">
         {isCancelled ? (
-          <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 flex items-center gap-3">
-            <XCircle className="w-6 h-6 text-rose-600 shrink-0" />
+          <div className="p-4 rounded-2xl bg-red-50 border border-red-200 text-red-800 flex items-center gap-3">
+            <XCircle className="w-6 h-6 text-red-600 shrink-0" />
             <div>
               <p className="text-sm font-bold">Đơn hàng này đã bị hủy</p>
-              <p className="text-xs text-rose-600 mt-0.5">
-                Các sản phẩm và số lượt sử dụng mã giảm giá (nếu có) đã được hoàn trả lại tài khoản của bạn.
+              <p className="text-xs text-red-700 mt-0.5 text-pretty">
+                Các sản phẩm và số lượt sử dụng mã giảm giá (nếu có) đã được hoàn trả lại kho.
               </p>
             </div>
           </div>
@@ -147,13 +168,12 @@ export default function OrderDetailPage({ params }) {
               <h2 className="text-sm font-bold text-neutral-900 dark:text-white">
                 Tiến độ xử lý đơn hàng
               </h2>
-              <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border ${statusInfo.badge}`}>
-                <span className={`w-2 h-2 rounded-full ${statusInfo.dot}`} />
+              <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ring-1 ring-inset ring-black/5 ${statusInfo.badge}`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${statusInfo.dot}`} />
                 {statusInfo.label}
               </span>
             </div>
 
-            {/* Stepper Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-4 gap-6 relative">
               {TIMELINE_STEPS.map((step, idx) => {
                 const isPassed = statusInfo.step >= idx + 1;
@@ -164,7 +184,7 @@ export default function OrderDetailPage({ params }) {
                     <div
                       className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 text-xs font-bold transition-colors ${
                         isPassed
-                          ? 'bg-brand-blue text-white shadow-md shadow-blue-500/20'
+                          ? 'bg-brand-blue text-white'
                           : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-400'
                       }`}
                     >
@@ -183,7 +203,7 @@ export default function OrderDetailPage({ params }) {
                       >
                         {step.title}
                       </h4>
-                      <p className="text-[11px] text-neutral-400 mt-0.5 leading-snug">
+                      <p className="text-[11px] text-neutral-500 mt-0.5 leading-snug text-pretty">
                         {step.desc}
                       </p>
                     </div>
@@ -197,10 +217,8 @@ export default function OrderDetailPage({ params }) {
 
       {/* 2-Column Details Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        
-        {/* Left Column: Products List & Price Breakdown (Cols 1-7) */}
         <div className="lg:col-span-7 space-y-6">
-          <div className="p-6 sm:p-7 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 shadow-sm space-y-4">
+          <div className="p-6 sm:p-7 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 space-y-4">
             <h2 className="text-base font-bold text-neutral-900 dark:text-white flex items-center gap-2">
               <Package className="w-5 h-5 text-brand-blue" />
               Sản phẩm đã đặt ({order.items?.length || 0})
@@ -209,30 +227,29 @@ export default function OrderDetailPage({ params }) {
             <div className="divide-y divide-neutral-100 dark:divide-neutral-800">
               {order.items?.map((item, idx) => (
                 <div key={idx} className="py-4 flex items-center justify-between gap-4">
-                  <div>
+                  <div className="min-w-0">
                     <Link
                       href={`/products/${item.productId}`}
                       className="text-sm font-bold text-neutral-900 dark:text-white hover:text-brand-blue transition-colors line-clamp-1"
                     >
                       {item.name}
                     </Link>
-                    <p className="text-xs text-neutral-400 mt-0.5">
+                    <p className="text-xs text-neutral-400 mt-0.5 tabular-nums">
                       Đơn giá: {formatVND(item.price)} × {item.quantity}
                     </p>
                   </div>
 
-                  <span className="text-sm font-black text-neutral-900 dark:text-white shrink-0">
+                  <span className="text-sm font-black text-neutral-900 dark:text-white shrink-0 tabular-nums whitespace-nowrap">
                     {formatVND(item.price * item.quantity)}
                   </span>
                 </div>
               ))}
             </div>
 
-            {/* Price Breakdown */}
-            <div className="pt-4 border-t border-neutral-100 dark:border-neutral-800 space-y-2.5 text-xs sm:text-sm">
+            <div className="pt-4 border-t border-neutral-100 dark:border-neutral-800 space-y-2.5 text-xs sm:text-sm tabular-nums">
               <div className="flex justify-between text-neutral-500">
                 <span>Tiền hàng:</span>
-                <span className="font-semibold text-neutral-800 dark:text-neutral-200">
+                <span className="font-semibold text-neutral-800 dark:text-neutral-200 whitespace-nowrap">
                   {formatVND(order.subtotal)}
                 </span>
               </div>
@@ -240,7 +257,7 @@ export default function OrderDetailPage({ params }) {
               {order.discount > 0 && (
                 <div className="flex justify-between text-emerald-600">
                   <span>Mã giảm giá ({order.promotionCode}):</span>
-                  <span className="font-bold">
+                  <span className="font-bold whitespace-nowrap">
                     - {formatVND(order.discount)}
                   </span>
                 </div>
@@ -248,7 +265,7 @@ export default function OrderDetailPage({ params }) {
 
               <div className="flex justify-between text-neutral-500">
                 <span>Phí giao hàng:</span>
-                <span className="font-semibold text-neutral-800 dark:text-neutral-200">
+                <span className="font-semibold text-neutral-800 dark:text-neutral-200 whitespace-nowrap">
                   {formatVND(order.shippingFee)}
                 </span>
               </div>
@@ -257,7 +274,7 @@ export default function OrderDetailPage({ params }) {
                 <span className="text-base font-bold text-neutral-900 dark:text-white">
                   Tổng tiền thanh toán:
                 </span>
-                <span className="text-2xl font-black text-brand-blue">
+                <span className="text-2xl font-black text-brand-blue whitespace-nowrap">
                   {formatVND(order.total)}
                 </span>
               </div>
@@ -265,11 +282,8 @@ export default function OrderDetailPage({ params }) {
           </div>
         </div>
 
-        {/* Right Column: Delivery & Payment Details (Cols 8-12) */}
         <div className="lg:col-span-5 space-y-6">
-          
-          {/* Shipping Address Card */}
-          <div className="p-6 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 shadow-sm space-y-3">
+          <div className="p-6 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 space-y-3">
             <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-400 flex items-center gap-1.5">
               <MapPin className="w-4 h-4 text-brand-blue" />
               Địa chỉ nhận hàng
@@ -278,17 +292,16 @@ export default function OrderDetailPage({ params }) {
               <p className="text-sm font-bold text-neutral-900 dark:text-white">
                 {order.shippingAddress?.fullName}
               </p>
-              <p className="text-xs text-neutral-500 mt-0.5">
+              <p className="text-xs text-neutral-500 mt-0.5 tabular-nums">
                 {order.shippingAddress?.phone}
               </p>
-              <p className="text-xs text-neutral-700 dark:text-neutral-300 mt-2 leading-relaxed">
+              <p className="text-xs text-neutral-700 dark:text-neutral-300 mt-2 leading-relaxed text-pretty">
                 {order.shippingAddress?.address}
               </p>
             </div>
           </div>
 
-          {/* Payment Details Card */}
-          <div className="p-6 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 shadow-sm space-y-4">
+          <div className="p-6 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 space-y-4">
             <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-400 flex items-center gap-1.5">
               <CreditCard className="w-4 h-4 text-brand-blue" />
               Thông tin thanh toán
@@ -304,42 +317,42 @@ export default function OrderDetailPage({ params }) {
 
               <div className="flex justify-between items-center">
                 <span className="text-neutral-500">Trạng thái:</span>
-                <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold border ${paymentInfo.badge}`}>
+                <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ring-1 ring-inset ring-black/5 ${paymentInfo.badge}`}>
                   {paymentInfo.label}
                 </span>
               </div>
             </div>
 
-            {/* Reminder for Pending VietQR Transfers */}
-            {order.paymentMethod === 'bank' && order.paymentStatus !== 'paid' && !isCancelled && (
-              <div className="p-4 rounded-2xl bg-neutral-900 text-white space-y-2.5 text-xs">
+            {order.paymentMethod === 'bank' && order.paymentStatus !== 'paid' && !isCancelled && bankInfo && (
+              <div className="p-4 rounded-2xl bg-neutral-900 text-white space-y-2 text-xs">
                 <div className="flex items-center gap-2 text-amber-400 font-bold">
                   <QrCode className="w-4 h-4" />
-                  Hướng dẫn chuyển khoản VietQR
+                  Hướng dẫn chuyển khoản ngân hàng
                 </div>
                 <p className="text-neutral-300">
-                  Ngân hàng MB Bank • STK: <span className="font-mono font-bold text-white">9999 8888 6666</span>
+                  Ngân hàng {bankInfo.name} • STK:{' '}
+                  <span className="font-mono font-bold text-white">{bankInfo.account}</span>
                 </p>
+                <p className="text-neutral-300">Chủ TK: {bankInfo.holder}</p>
                 <p className="text-neutral-300">
-                  Chủ TK: CONG TY TECHSTORE VIET NAM
-                </p>
-                <p className="text-neutral-300">
-                  Cú pháp: <span className="font-mono font-bold text-amber-300 bg-white/10 px-2 py-0.5 rounded">DH_{order._id.slice(-6).toUpperCase()}</span>
+                  Nội dung:{' '}
+                  <span className="font-mono font-bold text-amber-300 bg-white/10 px-2 py-0.5 rounded">
+                    {transferContent}
+                  </span>
                 </p>
               </div>
             )}
           </div>
 
-          {/* Cancel Order Action */}
           {canCancel && (
             <div className="p-6 rounded-3xl bg-rose-50/50 dark:bg-rose-950/20 border border-rose-200/80 dark:border-rose-900/40 text-center space-y-3">
-              <p className="text-xs text-rose-700 dark:text-rose-400">
-                Bạn có thể hủy đơn hàng này khi đơn chưa được bàn giao cho đơn vị vận chuyển.
+              <p className="text-xs text-rose-700 dark:text-rose-400 text-pretty">
+                Có thể hủy đơn hàng này khi đơn chưa được thanh toán và chưa bàn giao cho đơn vị vận chuyển.
               </p>
               <button
                 type="button"
                 onClick={() => setShowCancelModal(true)}
-                className="w-full py-3 px-4 rounded-2xl bg-white dark:bg-rose-950 border border-rose-300 dark:border-rose-800 text-rose-600 dark:text-rose-300 text-xs font-bold hover:bg-rose-100 dark:hover:bg-rose-900/40 transition-colors shadow-sm"
+                className="w-full py-3 px-4 rounded-xl bg-rose-500/10 hover:bg-rose-500/15 text-rose-700 dark:text-rose-300 text-xs font-bold transition-colors cursor-pointer"
               >
                 Hủy Đơn Hàng Này
               </button>
@@ -348,11 +361,10 @@ export default function OrderDetailPage({ params }) {
         </div>
       </div>
 
-      {/* Cancel Confirmation Modal */}
       {showCancelModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
-          <div className="bg-white dark:bg-neutral-900 rounded-3xl p-6 sm:p-8 max-w-sm w-full border border-neutral-200 dark:border-neutral-800 shadow-2xl space-y-4">
-            <div className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center mx-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-white dark:bg-neutral-900 rounded-2xl p-6 sm:p-8 max-w-sm w-full border border-neutral-200 dark:border-neutral-800 shadow-2xl space-y-4">
+            <div className="w-12 h-12 rounded-2xl bg-rose-500/10 text-rose-700 flex items-center justify-center mx-auto">
               <AlertTriangle className="w-6 h-6" />
             </div>
 
@@ -360,7 +372,7 @@ export default function OrderDetailPage({ params }) {
               <h3 className="text-base font-bold text-neutral-900 dark:text-white">
                 Xác nhận hủy đơn hàng?
               </h3>
-              <p className="text-xs text-neutral-500 mt-1">
+              <p className="text-sm/6 text-neutral-500 mt-2 text-pretty">
                 Số lượng tồn kho và mã giảm giá (nếu có) sẽ được hoàn trả lại ngay lập tức.
               </p>
             </div>
@@ -370,7 +382,7 @@ export default function OrderDetailPage({ params }) {
                 type="button"
                 disabled={cancelling}
                 onClick={() => setShowCancelModal(false)}
-                className="py-2.5 px-4 rounded-xl border border-neutral-200 dark:border-neutral-700 text-xs font-semibold text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100"
+                className="py-2.5 px-4 rounded-xl border border-neutral-200 dark:border-neutral-700 text-xs font-semibold text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 cursor-pointer"
               >
                 Không hủy
               </button>
@@ -378,7 +390,7 @@ export default function OrderDetailPage({ params }) {
                 type="button"
                 disabled={cancelling}
                 onClick={handleCancelOrder}
-                className="py-2.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition-colors disabled:opacity-50"
+                className="py-2.5 px-4 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-700 text-xs font-bold transition-colors disabled:opacity-50 cursor-pointer"
               >
                 {cancelling ? 'Đang hủy...' : 'Đồng ý hủy'}
               </button>

@@ -9,6 +9,7 @@ router.get('/orders', ...customer, c.listMine);
 router.get('/orders/:id', ...customer, c.show);
 router.post('/orders/:id/cancel', ...customer, c.cancelMine);
 router.get('/admin/orders', requireAdmin, c.listAll);
+router.get('/admin/orders/:id', requireAdmin, c.showAdmin);
 router.patch('/admin/orders/:id/status', requireAdmin, c.updateStatus);
 router.patch('/admin/orders/:id/payment', requireAdmin, c.confirmPayment);
 export default router;

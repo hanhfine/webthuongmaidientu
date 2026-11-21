@@ -10,13 +10,14 @@ export const toDTO = (u) => ({
   phone: u.phone,
   role: u.role,
   isActive: u.isActive,
+  createdAt: u.createdAt,
 });
 
 export async function register({ email, password, fullName, phone }) {
   const passwordHash = await bcrypt.hash(password, 10);
   try {
     const user = await User.create({ email, passwordHash, fullName, phone, role: 'customer' });
-    return toDTO(user);
+    return { user: toDTO(user), token: await signToken(user) };
   } catch (err) {
     if (err.code === 11000) throw new AppError(409, 'EMAIL_TAKEN', 'Email đã được đăng ký');
     throw err;

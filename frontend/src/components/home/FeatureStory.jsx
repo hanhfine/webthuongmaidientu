@@ -20,18 +20,18 @@ const STORIES = [
     ],
   },
   {
-    tag: 'Nghe Nhìn Đỉnh Cao',
-    title: 'Mãn nhãn\nvượt xa giới hạn',
-    desc: 'Chiêm ngưỡng trọn vẹn từng dải màu sống động, tận hưởng rạp chiếu phim ngay tại gia.',
-    primaryBtn: { label: 'Mua TV OLED', href: '/products?category=tv-av' },
-    secondaryBtn: { label: 'Mua Loa Nghệ Thuật', href: '/products?category=tv-av' },
+    tag: 'Âm Thanh & Ngoại Vi',
+    title: 'Làm việc mượt mà\nvượt xa giới hạn',
+    desc: 'Trọn bộ bàn phím cơ, chuột công thái học và âm thanh chống ồn giúp tập trung tối đa mỗi ngày.',
+    primaryBtn: { label: 'Xem Laptop', href: '/products?category=laptop' },
+    secondaryBtn: { label: 'Xem Phụ Kiện', href: '/products?category=phu-kien' },
     bgGradient: 'from-emerald-950/80 via-slate-900 to-neutral-950',
-    heroImage: 'https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?w=900&q=85',
+    heroImage: 'https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=900&q=85',
     subItems: [
-      { name: 'Micro RGB Vision', image: 'https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?w=300&q=80', href: '/products?category=tv-av' },
-      { name: 'The Frame Khung Tranh', image: 'https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?w=300&q=80', href: '/products?category=tv-av' },
-      { name: 'Loa Nghệ Thuật', image: 'https://images.unsplash.com/photo-1545454675-3531b543be5d?w=300&q=80', href: '/products?category=thiet-bi-deo' },
-      { name: 'Màn Hình Đồ Họa 4K', image: 'https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?w=300&q=80', href: '/products?category=laptop' },
+      { name: 'MacBook Air M3', image: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=300&q=80', href: '/products?category=laptop&brand=Apple' },
+      { name: 'Bàn Phím Keychron', image: 'https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=300&q=80', href: '/products?category=phu-kien&q=Keychron' },
+      { name: 'Tai Nghe AirPods', image: 'https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=300&q=80', href: '/products?category=phu-kien&q=AirPods' },
+      { name: 'Laptop Doanh Nhân', image: 'https://images.unsplash.com/photo-1593642632823-8f785ba67e45?w=300&q=80', href: '/products?category=laptop' },
     ],
   },
 ];
@@ -58,7 +58,7 @@ export default function FeatureStory() {
                   <div className="flex flex-wrap items-center gap-3 pt-4">
                     <Link
                       href={story.primaryBtn.href}
-                      className="px-6 py-2.5 rounded-full bg-white text-neutral-900 text-xs sm:text-sm font-bold hover:bg-neutral-100 transition-colors shadow-md"
+                      className="px-6 py-2.5 rounded-full bg-white text-neutral-900 text-xs sm:text-sm font-bold hover:bg-neutral-200 transition-colors shadow-md"
                     >
                       {story.primaryBtn.label}
                     </Link>
@@ -76,7 +76,7 @@ export default function FeatureStory() {
                   <img
                     src={story.heroImage}
                     alt={story.title}
-                    className="max-h-72 sm:max-h-96 object-contain drop-shadow-2xl hover:scale-105 transition-transform duration-500"
+                    className="max-h-72 sm:max-h-96 object-contain drop-shadow-2xl"
                   />
                 </div>
               </div>
@@ -88,17 +88,17 @@ export default function FeatureStory() {
                 <Link
                   key={sIdx}
                   href={sub.href}
-                  className="p-6 flex flex-col items-center text-center group hover:bg-white dark:hover:bg-neutral-800/80 transition-all duration-200"
+                  className="p-6 flex flex-col items-center text-center group hover:bg-neutral-100 dark:hover:bg-neutral-800/80 transition-colors duration-200"
                 >
                   <div className="w-24 h-24 mb-3 flex items-center justify-center">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={sub.image}
                       alt={sub.name}
-                      className="max-w-full max-h-full object-contain group-hover:scale-110 transition-transform duration-300"
+                      className="max-w-full max-h-full object-contain"
                     />
                   </div>
-                  <h4 className="text-xs sm:text-sm font-bold text-neutral-800 dark:text-neutral-200 group-hover:text-brand-blue transition-colors">
+                  <h4 className="text-xs sm:text-sm font-bold text-neutral-800 dark:text-neutral-200 group-hover:text-brand-blue transition-colors text-balance">
                     {sub.name}
                   </h4>
                 </Link>

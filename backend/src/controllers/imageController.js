@@ -12,6 +12,10 @@ export async function upload(req, res) {
 
 export async function show(req, res) {
   const img = await service.get(req.params.id);
-  res.set({ 'Content-Type': img.contentType, 'Cache-Control': 'public, max-age=86400' });
+  res.set({
+    'Content-Type': img.contentType,
+    'Cache-Control': 'public, max-age=86400',
+    'X-Content-Type-Options': 'nosniff',
+  });
   res.send(img.data);
 }

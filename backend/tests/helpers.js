@@ -15,6 +15,10 @@ export async function setup() {
 }
 
 export async function resetDb() {
+  const dbName = mongoose.connection.db.databaseName;
+  if (process.env.NODE_ENV !== 'test' || !dbName.endsWith('_test')) {
+    throw new Error(`Refusing to wipe non-test database "${dbName}" (NODE_ENV=${process.env.NODE_ENV})`);
+  }
   const cols = await mongoose.connection.db.collections();
   await Promise.all(cols.map((c) => c.deleteMany({})));
 }

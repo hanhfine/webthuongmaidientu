@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { config } from '../config.js';
 import authRoutes from './auth.routes.js';
 import cartRoutes from './cart.routes.js';
 import categoryRoutes from './category.routes.js';
@@ -13,6 +14,7 @@ import statsRoutes from './stats.routes.js';
 const router = Router();
 
 router.get('/health', (req, res) => res.json({ ok: true }));
+router.get('/config', (req, res) => res.json({ shippingFee: config.shippingFee, bank: config.bank }));
 router.use(authRoutes);
 router.use(categoryRoutes);
 router.use(imageRoutes);

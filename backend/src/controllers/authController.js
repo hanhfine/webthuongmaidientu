@@ -6,6 +6,7 @@ const cookieOptions = {
   httpOnly: true,
   sameSite: 'lax',
   secure: config.env === 'production',
+  path: '/',
   maxAge: 7 * 24 * 60 * 60 * 1000,
 };
 

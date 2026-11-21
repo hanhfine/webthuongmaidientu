@@ -1,3 +1,4 @@
+name: webbanhang
 services:
   mongo:
     image: mongo:7

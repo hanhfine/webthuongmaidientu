@@ -82,27 +82,30 @@ Mục tiêu: Xây dựng hoàn chỉnh tính năng xử lý thanh toán tự đ�
 
 ### Task 4: Controller & Gắn Routes
 
-- [ ] **Step 1: Tạo Controller**
+- [x] **Step 1: Tạo Controller**
   - Tạo file [backend/src/controllers/webhookController.js](file:///d:/code/NNKB_BM/repo/backend/src/controllers/webhookController.js).
   - Hàm `handleVietQrWebhook`: Parse body bằng `vietQrWebhookSchema`, lấy header `x-api-key`, gọi `paymentService.processVietQrWebhook`, trả JSON HTTP 200.
 
-- [ ] **Step 2: Định tuyến Webhook & Polling**
+- [x] **Step 2: Định tuyến Webhook & Polling**
   - Tạo file [backend/src/routes/webhook.routes.js](file:///d:/code/NNKB_BM/repo/backend/src/routes/webhook.routes.js): Gắn `POST /api/webhooks/vietqr`.
   - Sửa [backend/src/routes/order.routes.js](file:///d:/code/NNKB_BM/repo/backend/src/routes/order.routes.js): Thêm route `GET /api/orders/:id/payment-status` (gắn middleware `authenticate`).
-  - Sửa [backend/src/app.js](file:///d:/code/NNKB_BM/repo/backend/src/app.js): Đăng ký `webhook.routes.js` vào Express app.
+  - Sửa [backend/src/routes/index.js](file:///d:/code/NNKB_BM/repo/backend/src/routes/index.js): Đăng ký `webhook.routes.js` vào router tổng `/api`.
 
 ---
 
 ### Task 5: Kiểm thử tự động (`tests/payment-webhook.test.js`)
 
-- [ ] **Step 1: Tạo file test tích hợp**
+- [x] **Step 1: Tạo file test tích hợp**
   - Tạo file [backend/tests/payment-webhook.test.js](file:///d:/code/NNKB_BM/repo/backend/tests/payment-webhook.test.js).
-- [ ] **Step 2: Viết các kịch bản kiểm thử**
+- [x] **Step 2: Viết các kịch bản kiểm thử**
   - Test 1: Bị từ chối 401 khi thiếu hoặc sai header `x-api-key`.
   - Test 2: Bị từ chối 400 khi payload thiếu trường hoặc amount âm.
   - Test 3: Thanh toán thành công (order chuyển sang `paid` và `confirmed`, `paidAt` được gán, `PaymentTransaction` được lưu).
-  - Test 4: Gửi trùng `transactionId` (idempotent, không cập nhật lần 2, trả 200).
-  - Test 5: Khách chuyển thiếu tiền (`amount < total`) → `PaymentTransaction` ghi nhận `failed`, đơn giữ nguyên `pending`.
-  - Test 6: Polling `GET /api/orders/:id/payment-status` kiểm tra đúng quyền sở hữu đơn.
-- [ ] **Step 3: Chạy test và xác nhận**
-  - Chạy `NODE_ENV=test node --env-file-if-exists=.env --test tests/payment-webhook.test.js` để nghiệm thu.
+  - Test 4: Hỗ trợ mã đơn ngắn `DH` + 8 hex.
+  - Test 5: Gửi trùng `transactionId` (idempotent, không cập nhật lần 2, trả 200).
+  - Test 6: Khách chuyển thiếu tiền (`amount < total`) → `PaymentTransaction` ghi nhận `failed`, đơn giữ nguyên `pending`.
+  - Test 7: Khách chuyển dư tiền (`amount > total`) → đơn vẫn duyệt `paid` thành công và ghi chú tiền thừa vào `adminNote`.
+  - Test 8: Nội dung chuyển khoản không có mã đơn hợp lệ → ghi nhận `ignored`.
+  - Test 9: Polling `GET /api/orders/:id/payment-status` kiểm tra đúng quyền sở hữu đơn.
+- [x] **Step 3: Chạy test và xác nhận**
+  - Chạy `$env:NODE_ENV="test"; node --env-file-if-exists=.env --test tests/payment-webhook.test.js` để nghiệm thu.

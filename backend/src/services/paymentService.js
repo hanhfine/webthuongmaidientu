@@ -59,6 +59,18 @@ async function findOrderByContent(content) {
   return null;
 }
 
+// Hàm bắt lỗi các trường hợp trùng tranction id
+// async function saveTransactionLog(data){
+//   try{
+//     await PaymentTransaction.create(data);
+//     return true;
+//   }
+//   catch(err){
+//     if (isDuplicateKeyError(err)) return false;
+//     throw err;
+//   }
+// }
+
 // Hàm xử lý gói tin Webhook VietQR từ cổng thanh toán
 export async function processVietQrWebhook(payload, headerSecret) {
   // BƯỚC 1: Xác thực secret key từ Header
@@ -172,15 +184,21 @@ export async function processVietQrWebhook(payload, headerSecret) {
       );
 
       // 2. Cập nhật trạng thái đơn hàng sang paid và confirmed
+      const updateFields = {
+        paymentStatus: 'paid',
+        status: order.status === 'pending' ? 'confirmed' : order.status,
+        paidAt: new Date(),
+      };
+
+      // Nếu khách chuyển thừa tiền, ghi chú số tiền chênh lệch vào adminNote để hoàn trả
+      if (amount > order.total) {
+        const excess = amount - order.total;
+        updateFields.adminNote = `LƯU Ý: Khách chuyển DƯ TIỀN! Đã nhận ${amount}đ / Cần ${order.total}đ (Dư ${excess}đ). Cần liên hệ hoàn tiền thừa cho khách.`;
+      }
+
       await Order.updateOne(
         { _id: order._id, paymentStatus: 'pending' },
-        {
-          $set: {
-            paymentStatus: 'paid',
-            status: order.status === 'pending' ? 'confirmed' : order.status,
-            paidAt: new Date(),
-          },
-        },
+        { $set: updateFields },
         { session },
       );
     });

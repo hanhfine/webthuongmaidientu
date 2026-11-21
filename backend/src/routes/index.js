@@ -9,6 +9,7 @@ import promotionRoutes from './promotion.routes.js';
 import reviewRoutes from './review.routes.js';
 import userRoutes from './user.routes.js';
 import statsRoutes from './stats.routes.js';
+import webhookRoutes from './webhook.routes.js';
 
 const router = Router();
 
@@ -23,5 +24,6 @@ router.use(orderRoutes);
 router.use(reviewRoutes);
 router.use(userRoutes);
 router.use(statsRoutes);
+router.use(webhookRoutes);
 
 export default router;

@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import * as service from '../services/orderService.js';
+import * as paymentService from '../services/paymentService.js';
 import { createOrderSchema } from '../validators/order.js';
 
 export async function create(req, res) {
@@ -28,4 +29,14 @@ export const updateStatus = async (req, res) => {
 export const confirmPayment = async (req, res) => {
   z.object({ paymentStatus: z.literal('paid') }).parse(req.body);
   res.json(await service.confirmPayment(req.params.id));
+};
+
+// Lấy trạng thái thanh toán của đơn hàng (phục vụ khách kiểm tra / polling)
+export const paymentStatus = async (req, res, next) => {
+  try {
+    const result = await paymentService.getOrderPaymentStatus(req.params.id, req.user.id, req.user.role);
+    res.json(result);
+  } catch (err) {
+    next(err);
+  }
 };

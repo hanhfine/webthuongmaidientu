@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
-const backendUrl = (process.env.BACKEND_URL || 'http://localhost:4000').replace(/\/+$/, '');
+const rawBackendUrl = (process.env.BACKEND_URL || 'http://localhost:4000').trim().replace(/\/+$/, '');
+const backendUrl = /^https?:\/\//i.test(rawBackendUrl) ? rawBackendUrl : `https://${rawBackendUrl}`;
 
 const nextConfig = {
   async rewrites() {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, use } from 'react';
+import { useState, useEffect, useRef, use } from 'react';
 import Link from 'next/link';
 import {
   Package,
@@ -11,7 +11,6 @@ import {
   AlertTriangle,
   ArrowLeft,
   XCircle,
-  QrCode,
 } from 'lucide-react';
 import {
   formatVND,
@@ -20,9 +19,22 @@ import {
   getPaymentStatus,
   getPaymentMethodLabel,
 } from '@/lib/format';
+import SepayPaymentBox from '@/components/order/SepayPaymentBox';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
 import api from '@/lib/api';
+
+const TERMINAL_PAYMENT_STATUSES = new Set(['paid', 'need_refund', 'refunded', 'unpaid']);
+const POLL_INTERVAL_MS = 4000;
+const EXPIRY_GRACE_MS = 2 * 60 * 1000;
+const PAYMENT_STATE_TO_ORDER_PAYMENT_STATUS = {
+  PENDING_PAYMENT: 'pending',
+  PARTIALLY_PAID: 'partially_paid',
+  PAID: 'paid',
+  CANCELLED: 'unpaid',
+  NEED_REFUND: 'need_refund',
+  REFUNDED: 'refunded',
+};
 
 const TIMELINE_STEPS = [
   { key: 'pending', title: 'Đặt hàng thành công', desc: 'Đơn hàng đang chờ hệ thống duyệt' },
@@ -41,6 +53,11 @@ export default function OrderDetailPage({ params }) {
   const [loading, setLoading] = useState(true);
   const [cancelling, setCancelling] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
+  const latestOrderRef = useRef(null);
+
+  useEffect(() => {
+    latestOrderRef.current = order;
+  }, [order]);
 
   useEffect(() => {
     async function loadOrder() {
@@ -64,6 +81,215 @@ export default function OrderDetailPage({ params }) {
 
     loadOrder();
   }, [orderId, user, isAdmin, authLoading, toast]);
+
+  useEffect(() => {
+    if (!order?._id || !user) return;
+    if (order.paymentMethod !== 'bank') return;
+    if (!['pending', 'partially_paid'].includes(order.paymentStatus)) return;
+    if (order.status === 'cancelled') return;
+
+    const expiryRaw =
+      (order.paymentStatus === 'partially_paid' && order.payment?.partialGraceExpiresAt) ||
+      order.paymentInfo?.expiresAt ||
+      order.paymentExpiresAt ||
+      order.payment?.expiresAt ||
+      null;
+    const expiryMs = expiryRaw ? new Date(expiryRaw).getTime() : null;
+    const hardStopMs =
+      expiryMs && Number.isFinite(expiryMs) ? expiryMs + EXPIRY_GRACE_MS : null;
+
+    if (hardStopMs && Date.now() >= hardStopMs) {
+      return;
+    }
+
+    let cancelled = false;
+    let fetching = false;
+    let es = null;
+    let pollTimer = null;
+    let sseOpenTimeout = null;
+    let graceTimer = null;
+
+    const endpoint = isAdmin ? `/api/admin/orders/${order._id}` : `/api/orders/${order._id}`;
+
+    const isHardStopped = () => Boolean(hardStopMs && Date.now() >= hardStopMs);
+
+    const stopAll = () => {
+      if (es) {
+        es.close();
+        es = null;
+      }
+      if (pollTimer) {
+        clearInterval(pollTimer);
+        pollTimer = null;
+      }
+      if (sseOpenTimeout) {
+        clearTimeout(sseOpenTimeout);
+        sseOpenTimeout = null;
+      }
+      if (graceTimer) {
+        clearTimeout(graceTimer);
+        graceTimer = null;
+      }
+    };
+
+    const applyUpdatedOrder = (fresh) => {
+      if (cancelled || !fresh || !fresh._id) return;
+      const prev = latestOrderRef.current;
+      latestOrderRef.current = fresh;
+      setOrder(fresh);
+
+      if (prev && fresh.paymentStatus !== prev.paymentStatus) {
+        if (fresh.paymentStatus === 'paid') {
+          toast.success('Đã nhận thanh toán thành công! Đơn hàng đã được xác nhận.');
+        } else if (fresh.paymentStatus === 'partially_paid') {
+          toast.info('Hệ thống đã ghi nhận khoản thanh toán một phần.');
+        } else if (fresh.paymentStatus === 'need_refund') {
+          toast.error('Đơn hàng đã chuyển sang trạng thái chờ hoàn tiền.');
+        } else if (fresh.status === 'cancelled') {
+          toast.info('Đơn hàng đã bị hủy do quá hạn thanh toán.');
+        }
+      } else if (
+        prev &&
+        (fresh.paidAmount ?? 0) > (prev.paidAmount ?? 0) &&
+        fresh.paymentStatus === 'partially_paid'
+      ) {
+        toast.info('Hệ thống vừa ghi nhận thêm một khoản chuyển khoản.');
+      }
+
+      if (TERMINAL_PAYMENT_STATUSES.has(fresh.paymentStatus) || fresh.status === 'cancelled') {
+        stopAll();
+      }
+    };
+
+    const fetchLatestOrder = async ({ force = false } = {}) => {
+      if (cancelled || fetching) return;
+      if (!force && isHardStopped()) {
+        stopAll();
+        return;
+      }
+      try {
+        fetching = true;
+        const fresh = await api.get(endpoint);
+        applyUpdatedOrder(fresh);
+      } catch {
+        // Silent retry on transient polling failure
+      } finally {
+        fetching = false;
+      }
+    };
+
+    const stopPollingFallback = () => {
+      if (pollTimer) {
+        clearInterval(pollTimer);
+        pollTimer = null;
+      }
+    };
+
+    const startPollingFallback = () => {
+      if (cancelled || pollTimer || isHardStopped()) return;
+      pollTimer = setInterval(() => {
+        if (isHardStopped()) {
+          stopAll();
+          return;
+        }
+        fetchLatestOrder();
+      }, POLL_INTERVAL_MS);
+    };
+
+    if (typeof EventSource !== 'undefined') {
+      es = new EventSource('/api/orders/' + order._id + '/events', {
+        withCredentials: true,
+      });
+
+      sseOpenTimeout = setTimeout(() => {
+        if (!cancelled && es && es.readyState !== EventSource.OPEN) {
+          startPollingFallback();
+        }
+      }, 5000);
+
+      es.onopen = () => {
+        if (sseOpenTimeout) {
+          clearTimeout(sseOpenTimeout);
+          sseOpenTimeout = null;
+        }
+        stopPollingFallback();
+      };
+
+      const handleSsePayload = (event) => {
+        if (cancelled) return;
+        let payload = null;
+        try {
+          payload = event?.data ? JSON.parse(event.data) : null;
+        } catch {
+          payload = null;
+        }
+        if (!payload) return;
+
+        const current = latestOrderRef.current;
+        const mappedFromPaymentState = PAYMENT_STATE_TO_ORDER_PAYMENT_STATUS[payload.status];
+        const nextPayStatus =
+          payload.paymentStatus ?? mappedFromPaymentState ?? payload.order?.paymentStatus;
+        const nextOrdStatus =
+          payload.orderStatus ??
+          payload.order?.status ??
+          (!mappedFromPaymentState ? payload.status : undefined);
+        const nextPaid = payload.paidAmount ?? payload.order?.paidAmount;
+        const nextOverpaid = payload.overpaidAmount ?? payload.order?.overpaidAmount;
+
+        const hasMeaningfulChange =
+          !current ||
+          (nextPayStatus && nextPayStatus !== current.paymentStatus) ||
+          (nextOrdStatus && nextOrdStatus !== current.status) ||
+          (typeof nextPaid === 'number' && nextPaid !== (current.paidAmount ?? 0)) ||
+          (typeof nextOverpaid === 'number' && nextOverpaid !== (current.overpaidAmount ?? 0));
+
+        if (hasMeaningfulChange) {
+          stopPollingFallback();
+          if (payload._id && Array.isArray(payload.items) && payload.paymentInfo) {
+            applyUpdatedOrder(payload);
+          } else {
+            fetchLatestOrder();
+          }
+        }
+      };
+
+      es.addEventListener('payment_update', handleSsePayload);
+      es.onmessage = handleSsePayload;
+
+      es.onerror = () => {
+        if (cancelled) return;
+        startPollingFallback();
+      };
+    } else {
+      startPollingFallback();
+    }
+
+    if (hardStopMs) {
+      const msUntilHardStop = Math.min(Math.max(0, hardStopMs - Date.now()), 2147483647);
+      graceTimer = setTimeout(async () => {
+        if (cancelled) return;
+        await fetchLatestOrder({ force: true });
+        stopAll();
+      }, msUntilHardStop);
+    }
+
+    return () => {
+      cancelled = true;
+      stopAll();
+    };
+  }, [
+    order?._id,
+    order?.paymentMethod,
+    order?.paymentStatus,
+    order?.status,
+    order?.paymentExpiresAt,
+    order?.paymentInfo?.expiresAt,
+    order?.payment?.expiresAt,
+    order?.payment?.partialGraceExpiresAt,
+    user,
+    isAdmin,
+    toast,
+  ]);
 
   const handleCancelOrder = async () => {
     try {
@@ -117,23 +343,28 @@ export default function OrderDetailPage({ params }) {
   const isCancelled = order.status === 'cancelled';
   const statusInfo = getOrderStatus(order.status);
   const paymentInfo = getPaymentStatus(order.paymentStatus);
-  const canCancel = ['pending', 'confirmed'].includes(order.status) && order.paymentStatus !== 'paid';
-
-  const bankInfo = order.paymentInfo?.bank;
-  const transferContent =
-    order.paymentInfo?.transferContent || `DH${String(order._id).slice(-8).toUpperCase()}`;
+  const canCancel =
+    ['pending', 'confirmed'].includes(order.status) &&
+    !['paid', 'need_refund', 'refunded'].includes(order.paymentStatus);
+  const paidAmount = order.paymentInfo?.paidAmount ?? order.paidAmount ?? 0;
+  const overpaidAmount = order.paymentInfo?.overpaidAmount ?? order.overpaidAmount ?? 0;
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
       <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
         <div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <h1 className="text-2xl sm:text-3xl font-black text-neutral-900 dark:text-white">
               Chi Tiết Đơn Hàng
             </h1>
             <span className="font-mono text-sm font-bold bg-neutral-100 dark:bg-neutral-800 px-3 py-1 rounded-full text-neutral-700 dark:text-neutral-300">
               #{order._id.slice(-8).toUpperCase()}
             </span>
+            {order.orderCode && (
+              <span className="font-mono text-xs font-bold bg-blue-50 dark:bg-blue-950/50 px-2.5 py-1 rounded-full text-brand-blue">
+                {order.orderCode}
+              </span>
+            )}
           </div>
           <p className="text-xs text-neutral-400 mt-1 flex items-center gap-1.5 tabular-nums">
             <Clock className="w-3.5 h-3.5" />
@@ -321,33 +552,33 @@ export default function OrderDetailPage({ params }) {
                   {paymentInfo.label}
                 </span>
               </div>
+
+              {order.paymentMethod === 'bank' && paidAmount + overpaidAmount > 0 && (
+                <div className="flex justify-between items-center tabular-nums">
+                  <span className="text-neutral-500">Tổng đã nhận:</span>
+                  <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                    {formatVND(paidAmount + overpaidAmount)}
+                  </span>
+                </div>
+              )}
+
+              {order.paymentMethod === 'bank' && overpaidAmount > 0 && (
+                <div className="flex justify-between items-center tabular-nums">
+                  <span className="text-neutral-500">Chuyển thừa:</span>
+                  <span className="font-bold text-amber-600 dark:text-amber-400">
+                    {formatVND(overpaidAmount)}
+                  </span>
+                </div>
+              )}
             </div>
 
-            {order.paymentMethod === 'bank' && order.paymentStatus !== 'paid' && !isCancelled && bankInfo && (
-              <div className="p-4 rounded-2xl bg-neutral-900 text-white space-y-2 text-xs">
-                <div className="flex items-center gap-2 text-amber-400 font-bold">
-                  <QrCode className="w-4 h-4" />
-                  Hướng dẫn chuyển khoản ngân hàng
-                </div>
-                <p className="text-neutral-300">
-                  Ngân hàng {bankInfo.name} • STK:{' '}
-                  <span className="font-mono font-bold text-white">{bankInfo.account}</span>
-                </p>
-                <p className="text-neutral-300">Chủ TK: {bankInfo.holder}</p>
-                <p className="text-neutral-300">
-                  Nội dung:{' '}
-                  <span className="font-mono font-bold text-amber-300 bg-white/10 px-2 py-0.5 rounded">
-                    {transferContent}
-                  </span>
-                </p>
-              </div>
-            )}
+            {order.paymentMethod === 'bank' && <SepayPaymentBox order={order} />}
           </div>
 
           {canCancel && (
             <div className="p-6 rounded-3xl bg-rose-50/50 dark:bg-rose-950/20 border border-rose-200/80 dark:border-rose-900/40 text-center space-y-3">
               <p className="text-xs text-rose-700 dark:text-rose-400 text-pretty">
-                Có thể hủy đơn hàng này khi đơn chưa được thanh toán và chưa bàn giao cho đơn vị vận chuyển.
+                Có thể hủy đơn hàng này khi đơn chưa được thanh toán đủ và chưa bàn giao cho đơn vị vận chuyển.
               </p>
               <button
                 type="button"
@@ -374,6 +605,8 @@ export default function OrderDetailPage({ params }) {
               </h3>
               <p className="text-sm/6 text-neutral-500 mt-2 text-pretty">
                 Số lượng tồn kho và mã giảm giá (nếu có) sẽ được hoàn trả lại ngay lập tức.
+                {order.paymentStatus === 'partially_paid' &&
+                  ' Số tiền đã thanh toán một phần sẽ được chuyển sang hàng đợi chờ hoàn tiền.'}
               </p>
             </div>
 

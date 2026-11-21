@@ -18,6 +18,20 @@ services:
         value: "30000"
       - key: MONGODB_URI
         sync: false
+      - key: BANK_NAME
+        value: Vietcombank
+      - key: BANK_CODE
+        value: VCB
+      - key: BANK_ACCOUNT
+        sync: false
+      - key: BANK_HOLDER
+        sync: false
+      - key: SEPAY_WEBHOOK_API_KEY
+        sync: false
+      - key: SEPAY_USER_API_TOKEN
+        sync: false
+      - key: PAYMENT_RESERVATION_MINUTES
+        value: "15"
 
   - type: web
     name: webthuongmaidientu-web
@@ -30,7 +44,4 @@ services:
       - key: NODE_ENV
         value: production
       - key: BACKEND_URL
-        fromService:
-          type: web
-          name: webthuongmaidientu-api
-          property: host
+        value: https://webthuongmaidientu-api.onrender.com

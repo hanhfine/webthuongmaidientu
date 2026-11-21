@@ -16,6 +16,7 @@ const orderSchema = new Schema(
   {
     userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     requestKey: { type: String, required: true },
+    orderCode: { type: String, unique: true, sparse: true },
     items: [orderItemSchema],
     shippingAddress: {
       fullName: { type: String, required: true },
@@ -28,7 +29,14 @@ const orderSchema = new Schema(
     total: { type: Number, required: true },
     promotionCode: String,
     paymentMethod: { type: String, enum: ['cod', 'bank'], required: true },
-    paymentStatus: { type: String, enum: ['unpaid', 'pending', 'paid'], required: true },
+    paymentStatus: {
+      type: String,
+      enum: ['unpaid', 'pending', 'partially_paid', 'paid', 'need_refund', 'refunded'],
+      required: true,
+    },
+    paymentExpiresAt: { type: Date, default: null },
+    paidAmount: { type: Number, default: 0, min: 0 },
+    overpaidAmount: { type: Number, default: 0, min: 0 },
     status: {
       type: String,
       enum: ['pending', 'confirmed', 'shipping', 'delivered', 'cancelled'],

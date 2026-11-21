@@ -95,9 +95,21 @@ export const PAYMENT_STATUS_CONFIG = {
     label: 'Chờ duyệt thanh toán',
     badge: 'bg-amber-50 text-amber-700 border-amber-200',
   },
+  partially_paid: {
+    label: 'Thanh toán một phần',
+    badge: 'bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-950/30 dark:text-orange-400',
+  },
   paid: {
     label: 'Đã thanh toán',
     badge: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  },
+  need_refund: {
+    label: 'Chờ hoàn tiền',
+    badge: 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/30 dark:text-rose-400',
+  },
+  refunded: {
+    label: 'Đã hoàn tiền',
+    badge: 'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/30 dark:text-indigo-400',
   },
 };
 

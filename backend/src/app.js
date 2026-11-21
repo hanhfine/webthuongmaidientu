@@ -19,6 +19,9 @@ export function createApp({ forceHttps = config.forceHttps } = {}) {
   app.use(
     helmet({
       crossOriginResourcePolicy: { policy: 'cross-origin' },
+      frameguard: { action: 'deny' },
+      referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+      hsts: false, // Managed conditionally by securityHeaders based on HTTPS
       contentSecurityPolicy: {
         directives: {
           defaultSrc: ["'self'"],

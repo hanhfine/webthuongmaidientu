@@ -26,4 +26,11 @@ export const promotionPatchSchema = z.object({
   isActive: z.boolean().optional(),
 });
 
-export const validateSchema = z.object({ code: z.string().trim().min(1) });
+export const validateSchema = z.object({
+  code: z
+    .string()
+    .trim()
+    .min(1, 'Vui lòng nhập mã giảm giá')
+    .max(30, 'Mã giảm giá tối đa 30 ký tự')
+    .regex(/^[A-Z0-9_-]+$/i, 'Mã giảm giá chỉ gồm ký tự chữ và số'),
+});

@@ -72,16 +72,27 @@ export default function CheckoutPage() {
     setError('');
     setFieldErrors({});
 
-    if (!fullName.trim()) {
-      setError('Vui lòng nhập họ tên người nhận hàng');
+    const SQLI_OR_XSS_DETECT = /['";<>\\]|--|\/\*|\*\//;
+    const VN_PHONE_REGEX = /^(?:0|\+?84)[0-9]{9}$/;
+
+    if (!fullName.trim() || fullName.trim().length < 2) {
+      setError('Vui lòng nhập họ tên người nhận hàng (tối thiểu 2 ký tự)');
       return;
     }
-    if (!phone.trim() || phone.trim().length < 8) {
-      setError('Vui lòng nhập số điện thoại hợp lệ (tối thiểu 8 ký tự)');
+    if (SQLI_OR_XSS_DETECT.test(fullName.trim())) {
+      setError('Họ và tên chứa ký tự đặc biệt không hợp lệ');
+      return;
+    }
+    if (!phone.trim() || !VN_PHONE_REGEX.test(phone.trim())) {
+      setError('Vui lòng nhập số điện thoại hợp lệ (10 chữ số, ví dụ: 0912345678)');
       return;
     }
     if (!address.trim() || address.trim().length < 5) {
-      setError('Vui lòng nhập địa chỉ giao hàng chi tiết');
+      setError('Vui lòng nhập địa chỉ giao hàng chi tiết (tối thiểu 5 ký tự)');
+      return;
+    }
+    if (SQLI_OR_XSS_DETECT.test(address.trim())) {
+      setError('Địa chỉ chứa ký tự đặc biệt không hợp lệ');
       return;
     }
     if (items.length === 0) {

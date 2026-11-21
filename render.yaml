@@ -45,3 +45,24 @@ services:
         value: production
       - key: BACKEND_URL
         value: https://webthuongmaidientu-api.onrender.com
+
+  - type: web
+    name: webthuongmaidientu-waf
+    runtime: docker
+    plan: free
+    rootDir: waf
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /waf-health
+    envVars:
+      - key: FRONTEND_ORIGIN
+        value: https://webthuongmaidientu-web.onrender.com
+      - key: BACKEND_ORIGIN
+        value: https://webthuongmaidientu-api.onrender.com
+      - key: PARANOIA
+        value: "1"
+      - key: BLOCKING_PARANOIA
+        value: "1"
+      - key: MODSEC_RULE_ENGINE
+        value: "On"
+      - key: MODSEC_RESP_BODY_ACCESS
+        value: "On"

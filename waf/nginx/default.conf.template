@@ -1,0 +1,100 @@
+# ============================================================================
+# Nginx + ModSecurity v3 Reverse Proxy Gateway (Render & Docker)
+# - Rate limiting & Tarpit delay against brute-force / automated scanners
+# - Proxies /api/* -> BACKEND_ORIGIN and /* -> FRONTEND_ORIGIN
+# ============================================================================
+
+limit_req_zone $binary_remote_addr zone=auth_tarpit:10m rate=10r/m;
+limit_req_zone $binary_remote_addr zone=promo_tarpit:10m rate=12r/m;
+limit_req_zone $binary_remote_addr zone=api_general:10m rate=60r/m;
+
+server {
+    listen ${PORT} default_server;
+    listen [::]:${PORT} default_server;
+    server_name _;
+
+    server_tokens off;
+    client_max_body_size 5M;
+
+    # Identify WAF Gateway protection layer in HTTP headers
+    add_header X-WAF-Protected "ModSecurity-OWASP-CRS" always;
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-Frame-Options "DENY" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+
+    # Dedicated WAF healthcheck endpoint for Render
+    location = /waf-health {
+        modsecurity off;
+        access_log off;
+        default_type application/json;
+        return 200 '{"ok":true,"service":"webthuongmaidientu-waf","engine":"ModSecurity-v3-OWASP-CRS"}';
+    }
+
+    # Strict rate-limit + tarpit delay (no nodelay -> intentionally slows brute-force bots)
+    location ~ ^/api/auth/(login|register)$ {
+        limit_req zone=auth_tarpit burst=5;
+        limit_req_status 429;
+        proxy_pass ${BACKEND_ORIGIN};
+        proxy_ssl_server_name on;
+        proxy_http_version 1.1;
+        proxy_set_header Host $proxy_host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+    }
+
+    # Rate-limit + tarpit delay on promotion brute-force endpoint
+    location = /api/promotions/validate {
+        limit_req zone=promo_tarpit burst=4;
+        limit_req_status 429;
+        proxy_pass ${BACKEND_ORIGIN};
+        proxy_ssl_server_name on;
+        proxy_http_version 1.1;
+        proxy_set_header Host $proxy_host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+    }
+
+    # Real-time SSE endpoint (no proxy buffering)
+    location ~ "^/api/orders/[0-9a-fA-F]{24}/events$" {
+        proxy_pass ${BACKEND_ORIGIN};
+        proxy_ssl_server_name on;
+        proxy_http_version 1.1;
+        proxy_buffering off;
+        proxy_cache off;
+        proxy_read_timeout 3600s;
+        proxy_set_header Connection "";
+        proxy_set_header Host $proxy_host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+    }
+
+    # General Backend API routes
+    location /api/ {
+        limit_req zone=api_general burst=30 nodelay;
+        limit_req_status 429;
+        proxy_pass ${BACKEND_ORIGIN};
+        proxy_ssl_server_name on;
+        proxy_http_version 1.1;
+        proxy_set_header Host $proxy_host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+    }
+
+    # Frontend Next.js routes
+    location / {
+        proxy_pass ${FRONTEND_ORIGIN};
+        proxy_ssl_server_name on;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $proxy_host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+    }
+}

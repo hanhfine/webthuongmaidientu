@@ -6,6 +6,7 @@ const router = Router();
 const customer = [authenticate, requireRole('customer')];
 router.post('/orders', ...customer, c.create);
 router.get('/orders', ...customer, c.listMine);
+router.get('/orders/:id/events', authenticate, c.streamEvents);
 router.get('/orders/:id', ...customer, c.show);
 router.get('/orders/:id/payment-status', authenticate, c.paymentStatus);
 router.post('/orders/:id/cancel', ...customer, c.cancelMine);

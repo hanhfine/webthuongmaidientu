@@ -1,41 +1,46 @@
-// Model lưu vết các giao dịch thanh toán từ Webhook ngân hàng / VietQR
 import mongoose from 'mongoose';
 
 const { Schema } = mongoose;
 
-// Schema chi tiết cho một giao dịch nhận từ Webhook
+
+const safeIntValidator = {
+  validator: (v) => Number.isSafeInteger(v) && v >= 0,
+  message: '{PATH} must be a non-negative integer VND amount',
+};
+
 const paymentTransactionSchema = new Schema(
   {
-    // Đơn hàng tương ứng (nếu tìm thấy từ nội dung chuyển khoản)
-    orderId: { type: Schema.Types.ObjectId, ref: 'Order', index: true },
-    // Tên cổng hoặc ngân hàng gửi webhook (ví dụ: sepay, payos, mbbank)
-    gateway: { type: String, required: true },
-    // Mã giao dịch duy nhất từ ngân hàng (đảm bảo tính idempotent, không xử lý trùng)
-    gatewayTransactionId: { type: String, required: true, unique: true },
-    // Số tài khoản ngân hàng nhận tiền
-    accountNumber: { type: String },
-    // Số tiền thực tế nhận được (số nguyên VND)
-    amount: { type: Number, required: true },
-    // Nội dung chuyển khoản thực tế từ khách hàng
-    transferContent: { type: String, required: true },
-    // Trạng thái xử lý giao dịch: success (thành công), ignored (bỏ qua), failed (lỗi)
-    status: {
+    providerTxnId: { type: String, required: true, unique: true },
+    provider: { type: String, default: 'sepay' },
+    source: { type: String, enum: ['webhook', 'reconcile_cron'], required: true },
+    gateway: { type: String, default: '' },
+    accountNumber: { type: String, default: '' },
+    transferType: { type: String, enum: ['in', 'out'], required: true },
+    transferAmount: { type: Number, required: true, min: 0, validate: safeIntValidator },
+    content: { type: String, default: '' },
+    extractedOrderCode: { type: String, default: null },
+    referenceCode: { type: String, default: '' },
+    transactionDate: { type: Date, default: null },
+    orderId: { type: Schema.Types.ObjectId, ref: 'Order', default: null },
+    paymentId: { type: Schema.Types.ObjectId, ref: 'Payment', default: null },
+    matchStatus: {
       type: String,
-      enum: ['success', 'ignored', 'failed'],
-      default: 'success',
+      enum: [
+        'MATCHED_PAID',
+        'MATCHED_PARTIAL',
+        'MATCHED_OVERPAID',
+        'LATE_RECOVERED',
+        'LATE_NEED_REFUND',
+        'UNMATCHED',
+        'IGNORED_OUTGOING',
+        'ALREADY_SETTLED',
+      ],
       required: true,
     },
-    // Lý do thất bại hoặc bỏ qua nếu có (ví dụ: AMOUNT_UNDERPAID, ORDER_NOT_FOUND)
-    failureReason: { type: String },
-    // Lưu toàn bộ payload JSON gốc phục vụ đối soát và audit log
-    rawPayload: { type: Schema.Types.Mixed },
+    rawPayload: { type: Schema.Types.Mixed, required: true },
+    processedAt: { type: Date, default: Date.now },
   },
-  { timestamps: true },
+  { timestamps: true, collection: 'payment_transactions' },
 );
 
-// Đánh unique index cho mã giao dịch ngân hàng để chống xử lý trùng lặp
-paymentTransactionSchema.index({ gatewayTransactionId: 1 }, { unique: true });
-// Đánh index cho orderId và thời gian tạo để tăng tốc truy vấn lịch sử
-paymentTransactionSchema.index({ orderId: 1, createdAt: -1 });
-
-export const PaymentTransaction = mongoose.model('PaymentTransaction', paymentTransactionSchema);
+paymentTransactionSchema.index({ orderId: 1, processedAt: -1 });

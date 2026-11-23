@@ -10,6 +10,7 @@ const productSchema = new Schema(
     brand: { type: String, required: true, trim: true },
     price: { type: Number, required: true, min: 0 },
     stock: { type: Number, required: true, min: 0 },
+    reservedStock: { type: Number, required: true, default: 0, min: 0 },
     description: { type: String, default: '' },
     specs: { type: Schema.Types.Mixed, default: {} },
     imageId: { type: Schema.Types.ObjectId, ref: 'Image', default: null },

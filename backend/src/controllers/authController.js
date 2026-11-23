@@ -8,6 +8,7 @@ export function cookieOptionsFor(req) {
     httpOnly: true,
     sameSite: 'lax',
     secure: Boolean(isHttpsRequest(req) || config.env === 'production'),
+    path: '/',
     maxAge: 7 * 24 * 60 * 60 * 1000,
   };
 }

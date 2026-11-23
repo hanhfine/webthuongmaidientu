@@ -17,5 +17,24 @@ services:
       interval: 5s
       timeout: 10s
       retries: 20
+
+  waf:
+    profiles: ["waf"]
+    build:
+      context: ./waf
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      PORT: "8080"
+      FRONTEND_ORIGIN: "http://host.docker.internal:3000"
+      BACKEND_ORIGIN: "http://host.docker.internal:4000"
+      PARANOIA: "1"
+      BLOCKING_PARANOIA: "1"
+      MODSEC_RULE_ENGINE: "On"
+      MODSEC_RESP_BODY_ACCESS: "On"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
 volumes:
   mongo-data: {}

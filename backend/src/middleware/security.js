@@ -21,7 +21,7 @@ export function securityHeaders({ forceHttps = false } = {}) {
       res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
     }
 
-    if (forceHttps && !isSecure && req.path !== '/api/health') {
+    if (forceHttps && !isSecure && req.path !== '/api/health' && req.path !== '/health') {
       const host = req.headers.host || 'localhost';
       return res.redirect(308, `https://${host}${req.originalUrl}`);
     }

@@ -22,6 +22,7 @@ export default function RegisterPage() {
   const [lastName, setLastName] = useState('');
   const [firstName, setFirstName] = useState('');
   const [phone, setPhone] = useState('');
+  const [honeypot, setHoneypot] = useState('');
 
   const [loading, setLoading] = useState(false);
   const [generalError, setGeneralError] = useState('');
@@ -60,6 +61,7 @@ export default function RegisterPage() {
         password,
         fullName,
         phone: phone.trim() || undefined,
+        website_url: honeypot,
       });
       toast.success('Đăng ký tài khoản thành công!');
       const rawRedirect = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('redirect') : null;
@@ -104,6 +106,20 @@ export default function RegisterPage() {
 
           {/* Registration Form */}
           <form onSubmit={handleSubmit} className="space-y-5">
+            {/* Fake Hidden Form Field (Honeypot) to trap automated account registration bots */}
+            <div aria-hidden="true" className="absolute -left-[9999px] w-px h-px overflow-hidden opacity-0 pointer-events-none">
+              <label htmlFor="reg-website-url">Website</label>
+              <input
+                id="reg-website-url"
+                name="website_url"
+                type="text"
+                tabIndex={-1}
+                autoComplete="off"
+                value={honeypot}
+                onChange={(e) => setHoneypot(e.target.value)}
+              />
+            </div>
+
             {/* 1. Email with real-time inline validation */}
             <div>
               <label

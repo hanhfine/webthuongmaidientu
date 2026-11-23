@@ -14,6 +14,7 @@ export default function LoginPage() {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [honeypot, setHoneypot] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -42,7 +43,7 @@ export default function LoginPage() {
 
     try {
       setLoading(true);
-      const loggedInUser = await login(email.trim(), password);
+      const loggedInUser = await login(email.trim(), password, { website_url: honeypot });
       toast.success('Đăng nhập thành công!');
       const rawRedirect = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('redirect') : null;
       const safeRedirect = rawRedirect && rawRedirect.startsWith('/') && !rawRedirect.startsWith('//') ? rawRedirect : null;
@@ -89,6 +90,20 @@ export default function LoginPage() {
 
           {/* Login Form */}
           <form onSubmit={handleSubmit} className="space-y-5">
+            {/* Fake Hidden Form Field (Honeypot) to trap automated credential stuffing bots */}
+            <div aria-hidden="true" className="absolute -left-[9999px] w-px h-px overflow-hidden opacity-0 pointer-events-none">
+              <label htmlFor="login-website-url">Website</label>
+              <input
+                id="login-website-url"
+                name="website_url"
+                type="text"
+                tabIndex={-1}
+                autoComplete="off"
+                value={honeypot}
+                onChange={(e) => setHoneypot(e.target.value)}
+              />
+            </div>
+
             {/* Email Input */}
             <div>
               <label htmlFor="login-email" className="block w-fit cursor-pointer text-xs font-medium text-neutral-300 mb-1.5">

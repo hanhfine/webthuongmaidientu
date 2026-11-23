@@ -6,6 +6,17 @@ import { app, setup, teardown } from './helpers.js';
 before(setup);
 after(teardown);
 
+test('GET /health returns service health payload', async () => {
+  const res = await request(app).get('/health');
+  assert.equal(res.status, 200);
+  assert.equal(res.body.ok, true);
+  assert.equal(res.body.status, 'ok');
+  assert.equal(res.body.service, 'webthuongmaidientu-api');
+  assert.equal(res.body.db, 'connected');
+  assert.equal(typeof res.body.uptime, 'number');
+  assert.equal(typeof res.body.timestamp, 'string');
+});
+
 test('GET /api/health returns ok', async () => {
   const res = await request(app).get('/api/health');
   assert.equal(res.status, 200);

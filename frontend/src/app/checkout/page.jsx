@@ -41,6 +41,7 @@ export default function CheckoutPage() {
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('cod');
+  const [honeypot, setHoneypot] = useState('');
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -72,16 +73,27 @@ export default function CheckoutPage() {
     setError('');
     setFieldErrors({});
 
-    if (!fullName.trim()) {
-      setError('Vui lòng nhập họ tên người nhận hàng');
+    const SQLI_OR_XSS_DETECT = /['";<>\\]|--|\/\*|\*\//;
+    const VN_PHONE_REGEX = /^(?:0|\+?84)[0-9]{9}$/;
+
+    if (!fullName.trim() || fullName.trim().length < 2) {
+      setError('Vui lòng nhập họ tên người nhận hàng (tối thiểu 2 ký tự)');
       return;
     }
-    if (!phone.trim() || phone.trim().length < 8) {
-      setError('Vui lòng nhập số điện thoại hợp lệ (tối thiểu 8 ký tự)');
+    if (SQLI_OR_XSS_DETECT.test(fullName.trim())) {
+      setError('Họ và tên chứa ký tự đặc biệt không hợp lệ');
+      return;
+    }
+    if (!phone.trim() || !VN_PHONE_REGEX.test(phone.trim())) {
+      setError('Vui lòng nhập số điện thoại hợp lệ (10 chữ số, ví dụ: 0912345678)');
       return;
     }
     if (!address.trim() || address.trim().length < 5) {
-      setError('Vui lòng nhập địa chỉ giao hàng chi tiết');
+      setError('Vui lòng nhập địa chỉ giao hàng chi tiết (tối thiểu 5 ký tự)');
+      return;
+    }
+    if (SQLI_OR_XSS_DETECT.test(address.trim())) {
+      setError('Địa chỉ chứa ký tự đặc biệt không hợp lệ');
       return;
     }
     if (items.length === 0) {
@@ -104,6 +116,7 @@ export default function CheckoutPage() {
           address: address.trim(),
         },
         promotionCode: appliedPromo?.code || undefined,
+        website_url: honeypot,
       });
 
       removePromo();
@@ -221,6 +234,20 @@ export default function CheckoutPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        {/* Fake Hidden Form Field (Honeypot) to trap automated order/card-testing bots */}
+        <div aria-hidden="true" className="absolute -left-[9999px] w-px h-px overflow-hidden opacity-0 pointer-events-none">
+          <label htmlFor="checkout-website-url">Website</label>
+          <input
+            id="checkout-website-url"
+            name="website_url"
+            type="text"
+            tabIndex={-1}
+            autoComplete="off"
+            value={honeypot}
+            onChange={(e) => setHoneypot(e.target.value)}
+          />
+        </div>
+
         {/* Left Column: Delivery Form & Payment Choice (Cols 1-7) */}
         <div className="lg:col-span-7 space-y-8">
           {(error || anyUnavailable) && (

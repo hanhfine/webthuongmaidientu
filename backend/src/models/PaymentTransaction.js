@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 
 const { Schema } = mongoose;
 
+
 const safeIntValidator = {
   validator: (v) => Number.isSafeInteger(v) && v >= 0,
   message: '{PATH} must be a non-negative integer VND amount',
@@ -43,5 +44,3 @@ const paymentTransactionSchema = new Schema(
 );
 
 paymentTransactionSchema.index({ orderId: 1, processedAt: -1 });
-
-export const PaymentTransaction = mongoose.model('PaymentTransaction', paymentTransactionSchema);

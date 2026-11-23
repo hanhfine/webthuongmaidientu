@@ -18,6 +18,17 @@ Lưu ý: `npm run dev`/`npm run seed` đặt `NODE_ENV=development`. `npm start`
 
 Chạy test (cần MongoDB đang chạy, dùng DB `webbanhang_test`): `npm test`.
 
+## Kiểm thử thanh toán tự động (VietQR Webhook)
+
+Hệ thống hỗ trợ thanh toán chuyển khoản ngân hàng tự động qua VietQR / SePay.
+Xem hướng dẫn chi tiết các kịch bản kiểm thử (Test tự động, Test giả lập PowerShell, Test chuyển tiền thật qua Ngrok) tại: [docs/vietqr-testing-guide.md](docs/vietqr-testing-guide.md).
+
+- Chạy nhanh 9 kịch bản kiểm thử tự động của luồng thanh toán:
+  ```powershell
+  cd backend
+  $env:NODE_ENV="test"; node --env-file-if-exists=.env --test tests/payment-webhook.test.js
+  ```
+
 ## Tài khoản dev
 
 Chỉ dùng cho môi trường phát triển: admin `admin@shop.local` / `admin12345` (đổi bằng biến môi trường `ADMIN_PASSWORD` khi seed). Mã giảm giá mẫu: `WELCOME10`.

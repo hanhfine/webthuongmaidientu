@@ -1,4 +1,6 @@
 const DEV_SECRET = 'dev-secret-change-me-dev-secret-change-me';
+// Secret token mặc định cho webhook trong môi trường dev/test
+const DEV_VIETQR_SECRET = 'dev-vietqr-secret-change-me';
 
 const BANK_CODE_MAP = {
   vietcombank: 'VCB',
@@ -64,7 +66,8 @@ export function loadConfig(env) {
     port,
     mongoUri: env.MONGODB_URI ?? 'mongodb://localhost:27017/?directConnection=true',
     dbName: env.NODE_ENV === 'test' ? 'webbanhang_test' : (env.DB_NAME ?? 'webbanhang'),
-    jwtSecret: jwtSecret || DEV_SECRET,
+    jwtSecret: env.JWT_SECRET || DEV_SECRET,
+    vietqrWebhookSecret: env.VIETQR_WEBHOOK_SECRET || DEV_VIETQR_SECRET,
     shippingFee: Number(rawFee),
     forceHttps: env.FORCE_HTTPS === 'true' || env.FORCE_HTTPS === '1',
     sslKeyPath: env.SSL_KEY_PATH ? String(env.SSL_KEY_PATH).trim() : '',
